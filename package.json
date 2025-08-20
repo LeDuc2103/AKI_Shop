@@ -1,0 +1,41 @@
+{
+  "name": "aki-shop",
+  "version": "1.0.0",
+  "description": "E-Reader & Smart Devices Store - Built with MVP Architecture",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000 -c-1",
+    "dev": "npx live-server --port=8000 --open=/index.html",
+    "build": "echo 'Static website - no build process needed'",
+    "test": "echo 'No tests specified'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeDuc2103/AKI_Shop.git"
+  },
+  "keywords": [
+    "e-reader",
+    "kindle",
+    "boox",
+    "kobo",
+    "remarkable",
+    "e-commerce",
+    "mvp",
+    "javascript",
+    "responsive",
+    "vietnam"
+  ],
+  "author": "LeDuc2103",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LeDuc2103/AKI_Shop/issues"
+  },
+  "homepage": "https://github.com/LeDuc2103/AKI_Shop#readme",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
