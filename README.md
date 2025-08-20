@@ -2,9 +2,9 @@
 
 ## 📖 Giới thiệu
 
-AKI-SHOP là website thương mại điện tử chuyên cung cấp máy đọc sách điện tử, thiết bị thông minh và phụ kiện chính hãng. Website được xây dựng theo mô hình MVP (Model-View-Presenter) để đảm bảo code dễ bảo trì và mở rộng.
+AKI-SHOP là website thương mại điện tử chuyên cung cấp máy đọc sách điện tử, thiết bị thông minh và phụ kiện chính hãng. Website được xây dựng theo mô hình MVC (Model-View-Controller) để đảm bảo code dễ bảo trì và mở rộng.
 
-## 🏗️ Cấu trúc thư mục (MVP Architecture)
+## 🏗️ Cấu trúc thư mục (MVC Architecture)
 
 ```
 AKI-SHOP/
@@ -13,8 +13,8 @@ AKI-SHOP/
 │   │   ├── style.css             # CSS chính
 │   │   ├── accessories-styles.css # CSS cho section phụ kiện
 │   │   └── news-styles.css       # CSS cho section tin tức
-│   ├── 📁 js/                    # JavaScript files
-│   │   └── scripts.js            # JavaScript utilities và components
+│   ├── 📁 js/                    # JavaScript utilities
+│   │   └── scripts.js            # UI components và animations
 │   └── 📁 images/                # Hình ảnh
 │       ├── 📁 logo/              # Logo và branding
 │       ├── 📁 banner/            # Banner và slides
@@ -24,29 +24,32 @@ AKI-SHOP/
 │   ├── 📁 models/                # Model Layer - Quản lý dữ liệu
 │   │   ├── ProductModel.js       # Model cho sản phẩm
 │   │   └── NewsModel.js          # Model cho tin tức
-│   ├── 📁 presenters/            # Presenter Layer - Logic nghiệp vụ
-│   │   └── HomePresenter.js      # Presenter cho trang chủ
+│   ├── 📁 controllers/           # Controller Layer - Logic điều khiển
+│   │   └── HomeController.js     # Controller cho trang chủ
 │   ├── 📁 views/                 # View Layer - Giao diện người dùng
 │   │   └── index.html            # Template trang chủ
 │   └── app.js                    # Entry point chính của ứng dụng
 ├── index.html                    # File HTML chính (root)
+├── package.json                  # NPM configuration
 ├── .gitignore                    # Git ignore rules
 └── README.md                     # Tài liệu này
 ```
 
-## 🎯 Mô hình MVP
+## 🎯 Mô hình MVC
 
 ### **Model Layer** (`src/models/`)
-- **ProductModel.js**: Quản lý dữ liệu sản phẩm, phụ kiện, categories
-- **NewsModel.js**: Quản lý dữ liệu tin tức, bài viết
+- **ProductModel.js**: Quản lý dữ liệu sản phẩm, phụ kiện, categories, brands
+- **NewsModel.js**: Quản lý dữ liệu tin tức, bài viết, search
 
 ### **View Layer** (`src/views/`)
 - **index.html**: Template HTML cho trang chủ
 - Chứa cấu trúc HTML thuần, không chứa logic
+- Hiển thị dữ liệu được truyền từ Controller
 
-### **Presenter Layer** (`src/presenters/`)
-- **HomePresenter.js**: Điều khiển tương tác giữa Model và View
-- Xử lý events, business logic, data binding
+### **Controller Layer** (`src/controllers/`)
+- **HomeController.js**: Điều khiển tương tác giữa Model và View
+- Xử lý user events, business logic, data binding
+- Quản lý state và navigation
 
 ## 🚀 Tính năng chính
 
@@ -155,8 +158,35 @@ Mở trình duyệt và truy cập: `http://localhost:8000`
 
 ### 🗂️ File Organization
 - CSS: Mỗi section có file riêng
-- JS: Tách Models, Presenters theo chức năng
+- JS: Tách Models, Controllers theo chức năng
 - Images: Phân loại theo thư mục
+
+## 💡 Lợi ích của MVC Architecture
+
+### ✨ **Separation of Concerns** - Tách biệt trách nhiệm
+- Model: Chỉ quản lý dữ liệu và business logic
+- View: Chỉ hiển thị giao diện người dùng  
+- Controller: Chỉ xử lý user input và điều phối
+
+### 🔄 **Maintainability** - Dễ bảo trì
+- Thay đổi giao diện không ảnh hưởng logic
+- Thay đổi data structure không ảnh hưởng UI
+- Debug dễ dàng vì logic được tách biệt rõ ràng
+
+### 📈 **Scalability** - Mở rộng linh hoạt
+- Thêm Views mới mà không thay đổi Models
+- Thêm Controllers mới cho các trang khác
+- Reuse Models cho nhiều Controllers khác nhau
+
+### 🧪 **Testability** - Dễ kiểm thử
+- Test Models độc lập không cần UI
+- Test Controllers với mock Models
+- Test Views với static data
+
+### 👥 **Team Development** - Phát triển nhóm hiệu quả
+- Frontend dev làm Views
+- Backend dev làm Models và APIs
+- Full-stack dev làm Controllers
 
 ### 🔄 Git Workflow
 ```bash

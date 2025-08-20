@@ -1,16 +1,16 @@
 /**
  * Main Application Entry Point
- * Khởi tạo ứng dụng theo mô hình MVP
+ * Khởi tạo ứng dụng theo mô hình MVC
  */
 
 // Global variables
-let homePresenter;
+let homeController;
 
 // Application initialization
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 AKI-SHOP Application Starting...');
     
-    // Initialize MVP architecture
+    // Initialize MVC architecture
     initializeApp();
 });
 
@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeApp() {
     try {
-        // Initialize Home Presenter
-        homePresenter = new HomePresenter();
-        homePresenter.init();
+        // Initialize Home Controller
+        homeController = new HomeController();
+        homeController.init();
         
         // Initialize global components
         initializeGlobalComponents();
