@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sticky Navbar - AKI SHOP</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <div id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="assets/images/logo/logo_aki.png" alt="AKI SHOP">
+                </div>
+                <div class="search-container">
+                    <input type="text" placeholder="Tìm kiếm sản phẩm...">
+                    <button type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="header-actions">
+                    <button class="action-btn">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-user"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav id="navbar-section">
+        <div class="container">
+            <ul id="navbar">
+                <li><a href="#home">Trang chủ</a></li>
+                <li><a href="#products">Sản phẩm</a></li>
+                <li><a href="#accessories">Phụ kiện</a></li>
+                <li><a href="#news">Tin tức</a></li>
+                <li><a href="#about">Giới thiệu</a></li>
+                <li><a href="#contact">Liên hệ</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Content to test scrolling -->
+    <div style="padding: 50px; background: linear-gradient(45deg, #f0f0f0, #e0e0e0);">
+        <h1>Test Sticky Navbar Effect</h1>
+        <p>Cuộn xuống để xem hiệu ứng sticky navbar:</p>
+        <ul>
+            <li><strong>Khi cuộn xuống:</strong> Header (thanh tìm kiếm) sẽ ẩn đi</li>
+            <li><strong>Navbar (thanh Home):</strong> sẽ dính ở đầu trang</li>
+            <li><strong>Khi cuộn lên đầu:</strong> Header sẽ hiện lại, navbar về vị trí bình thường</li>
+        </ul>
+        
+        <!-- Create lots of content to enable scrolling -->
+        <div style="margin: 50px 0;">
+            <h2>Nội dung test 1</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+        
+        <div style="margin: 50px 0;">
+            <h2>Nội dung test 2</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </div>
+        
+        <div style="margin: 50px 0;">
+            <h2>Nội dung test 3</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+        </div>
+        
+        <div style="margin: 50px 0; height: 500px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+            <h2>Khu vực content lớn để test scroll</h2>
+        </div>
+        
+        <div style="margin: 50px 0;">
+            <h2>Nội dung test 4</h2>
+            <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
+        </div>
+        
+        <div style="margin: 50px 0; height: 300px; background: #e8e8e8; display: flex; align-items: center; justify-content: center;">
+            <h2>Khu vực test cuối</h2>
+        </div>
+        
+        <div style="margin: 50px 0;">
+            <h2>Kết thúc test</h2>
+            <p>Cuộn lên đầu trang để kiểm tra header xuất hiện lại!</p>
+        </div>
+    </div>
+
+    <script src="assets/js/scripts.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+/* Additional sticky navbar responsive styles */
+@media (max-width: 1024px) {
+    #navbar-section:not(.navbar-sticky) {
+        margin-top: 100px;
+    }
+    #navbar-section.navbar-sticky {
+        margin-top: 0;
+        backdrop-filter: blur(10px);
+    }
+}
+
+@media (max-width: 768px) {
+    #header.header-hidden {
+        transform: translateY(-120px);
+    }
+    #navbar-section:not(.navbar-sticky) {
+        margin-top: 80px;
+    }
+}
