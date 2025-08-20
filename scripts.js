@@ -6,7 +6,95 @@ document.addEventListener('DOMContentLoaded', function() {
     let slideInterval;
 
     // Function to show specific slide
-    function showSlide(slideIndex) {
+    function showSlide(slideInde        // Initialize
+        updateKoboCarousel();
+    }
+});
+
+// JavaScript for News Carousel
+document.addEventListener('DOMContentLoaded', function() {
+    const newsWrapper = document.getElementById('newsWrapper');
+    const newsPrevBtn = document.getElementById('newsPrev');
+    const newsNextBtn = document.getElementById('newsNext');
+    
+    if (newsWrapper && newsPrevBtn && newsNextBtn) {
+        let newsCurrentIndex = 0;
+        const newsCards = newsWrapper.children;
+        let newsCardsToShow = getNewsCardsToShow();
+        let newsCardWidth = getNewsCardWidth();
+        
+        function getNewsCardsToShow() {
+            if (window.innerWidth <= 768) return 1;
+            if (window.innerWidth <= 1200) return 2;
+            return 3;
+        }
+        
+        function getNewsCardWidth() {
+            if (newsCards.length > 0) {
+                return newsCards[0].offsetWidth + 20; // width + gap
+            }
+            return 350;
+        }
+        
+        function updateNewsCarousel() {
+            const translateX = -newsCurrentIndex * newsCardWidth;
+            newsWrapper.style.transform = `translateX(${translateX}px)`;
+        }
+        
+        function newsNextCard() {
+            const maxIndex = Math.max(0, newsCards.length - newsCardsToShow);
+            newsCurrentIndex = Math.min(newsCurrentIndex + 1, maxIndex);
+            updateNewsCarousel();
+        }
+        
+        function newsPrevCard() {
+            newsCurrentIndex = Math.max(newsCurrentIndex - 1, 0);
+            updateNewsCarousel();
+        }
+        
+        // Event listeners
+        newsNextBtn.addEventListener('click', newsNextCard);
+        newsPrevBtn.addEventListener('click', newsPrevCard);
+        
+        // Touch/swipe support
+        let newsStartX = 0;
+        let newsEndX = 0;
+        
+        newsWrapper.addEventListener('touchstart', function(e) {
+            newsStartX = e.touches[0].clientX;
+        });
+        
+        newsWrapper.addEventListener('touchend', function(e) {
+            newsEndX = e.changedTouches[0].clientX;
+            handleNewsSwipe();
+        });
+        
+        function handleNewsSwipe() {
+            const swipeThreshold = 50;
+            const diff = newsStartX - newsEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    newsNextCard();
+                } else {
+                    newsPrevCard();
+                }
+            }
+        }
+        
+        // Update on window resize
+        window.addEventListener('resize', function() {
+            newsCardsToShow = getNewsCardsToShow();
+            newsCardWidth = getNewsCardWidth();
+            const maxIndex = Math.max(0, newsCards.length - newsCardsToShow);
+            newsCurrentIndex = Math.min(newsCurrentIndex, maxIndex);
+            updateNewsCarousel();
+        });
+        
+        // Initialize
+        updateNewsCarousel();
+    }
+});
         // Remove active class from all slides and dots
         slides.forEach((slide, index) => {
             slide.classList.remove('active');
@@ -480,5 +568,90 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial calculation
         headerHeight = header.offsetHeight;
         navbarHeight = navbarSection.offsetHeight;
+    }
+});
+
+// JavaScript for News Carousel
+document.addEventListener('DOMContentLoaded', function() {
+    const newsWrapper = document.getElementById('newsWrapper');
+    const newsPrevBtn = document.getElementById('newsPrev');
+    const newsNextBtn = document.getElementById('newsNext');
+    
+    if (newsWrapper && newsPrevBtn && newsNextBtn) {
+        let newsCurrentIndex = 0;
+        const newsCards = newsWrapper.children;
+        let newsCardsToShow = getNewsCardsToShow();
+        let newsCardWidth = getNewsCardWidth();
+        
+        function getNewsCardsToShow() {
+            if (window.innerWidth <= 768) return 1;
+            if (window.innerWidth <= 1200) return 2;
+            return 3;
+        }
+        
+        function getNewsCardWidth() {
+            if (newsCards.length > 0) {
+                return newsCards[0].offsetWidth + 20; // width + gap
+            }
+            return 350;
+        }
+        
+        function updateNewsCarousel() {
+            const translateX = -newsCurrentIndex * newsCardWidth;
+            newsWrapper.style.transform = `translateX(${translateX}px)`;
+        }
+        
+        function newsNextCard() {
+            const maxIndex = Math.max(0, newsCards.length - newsCardsToShow);
+            newsCurrentIndex = Math.min(newsCurrentIndex + 1, maxIndex);
+            updateNewsCarousel();
+        }
+        
+        function newsPrevCard() {
+            newsCurrentIndex = Math.max(newsCurrentIndex - 1, 0);
+            updateNewsCarousel();
+        }
+        
+        // Event listeners
+        newsNextBtn.addEventListener('click', newsNextCard);
+        newsPrevBtn.addEventListener('click', newsPrevCard);
+        
+        // Touch/swipe support
+        let newsStartX = 0;
+        let newsEndX = 0;
+        
+        newsWrapper.addEventListener('touchstart', function(e) {
+            newsStartX = e.touches[0].clientX;
+        });
+        
+        newsWrapper.addEventListener('touchend', function(e) {
+            newsEndX = e.changedTouches[0].clientX;
+            handleNewsSwipe();
+        });
+        
+        function handleNewsSwipe() {
+            const swipeThreshold = 50;
+            const diff = newsStartX - newsEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    newsNextCard();
+                } else {
+                    newsPrevCard();
+                }
+            }
+        }
+        
+        // Update on window resize
+        window.addEventListener('resize', function() {
+            newsCardsToShow = getNewsCardsToShow();
+            newsCardWidth = getNewsCardWidth();
+            const maxIndex = Math.max(0, newsCards.length - newsCardsToShow);
+            newsCurrentIndex = Math.min(newsCurrentIndex, maxIndex);
+            updateNewsCarousel();
+        });
+        
+        // Initialize
+        updateNewsCarousel();
     }
 });

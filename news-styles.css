@@ -1,0 +1,229 @@
+/* Tin tức cập nhật Section Styles */
+#news {
+    margin: 40px 0;
+    padding: 30px 60px;
+    background-color: #fff;
+}
+
+.news-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.news-header::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #8bc34a, #9ccc65);
+    border-radius: 2px;
+}
+
+.news-title h5 {
+    font-size: 13px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.929);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #8bc34a;
+    padding: 0;
+    height: 40px;
+    min-width: 200px;
+}
+
+.news-nav {
+    display: flex;
+    gap: 10px;
+}
+
+.news-prev,
+.news-next {
+    width: 35px;
+    height: 35px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.news-prev:hover,
+.news-next:hover {
+    background: #b71c1c;
+    transform: scale(1.1);
+}
+
+.news-container {
+    overflow: hidden;
+    position: relative;
+}
+
+.news-wrapper {
+    display: flex;
+    gap: 20px;
+    transition: transform 0.5s ease;
+}
+
+.news-card {
+    flex: 0 0 calc(33.333% - 14px);
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.news-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.news-card:hover .news-image img {
+    transform: scale(1.05);
+}
+
+.news-content {
+    padding: 20px;
+}
+
+.news-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    color: #333;
+    line-height: 1.4;
+    height: 65px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    text-overflow: ellipsis;
+}
+
+.news-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #666;
+}
+
+.news-meta i {
+    margin-right: 5px;
+}
+
+.news-date,
+.news-views {
+    display: flex;
+    align-items: center;
+}
+
+.news-excerpt {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+    height: 63px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    text-overflow: ellipsis;
+}
+
+/* Responsive styles for news section */
+@media (max-width: 1200px) {
+    .news-card {
+        flex: 0 0 calc(50% - 10px);
+    }
+}
+
+@media (max-width: 992px) {
+    #news {
+        padding: 25px 40px;
+    }
+    
+    .news-card {
+        flex: 0 0 calc(50% - 10px);
+    }
+}
+
+@media (max-width: 768px) {
+    #news {
+        padding: 20px 30px;
+    }
+    
+    .news-card {
+        flex: 0 0 100%;
+    }
+    
+    .news-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .news-title h5 {
+        font-size: 12px;
+        min-width: 160px;
+        height: 35px;
+    }
+    
+    .news-nav {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    #news {
+        padding: 15px 20px;
+    }
+    
+    .news-content {
+        padding: 15px;
+    }
+    
+    .news-content h3 {
+        font-size: 15px;
+        height: auto;
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+    }
+    
+    .news-excerpt {
+        height: auto;
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+    }
+}
