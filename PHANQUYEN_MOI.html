@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>✅ ĐÃ CẬP NHẬT PHÂN QUYỀN MỚI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 30px auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #088178 0%, #066d63 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .step-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #088178;
+        }
+        
+        .btn-custom {
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #088178;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .code-box {
+            background: #2d3748;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: monospace;
+            margin: 15px 0;
+        }
+        
+        .role-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        
+        .role-table th {
+            background: #088178;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        .role-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .badge-custom {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .badge-admin {
+            background: #dc3545;
+        }
+        
+        .badge-staff {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .badge-customer {
+            background: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-check-circle"></i> CẬP NHẬT PHÂN QUYỀN THÀNH CÔNG!</h1>
+            <p style="font-size: 1.3em; margin: 10px 0 0 0;">Hệ thống phân quyền 3 cấp</p>
+        </div>
+
+        <div class="content">
+            <div class="alert alert-success" style="background: #d4edda; padding: 25px; border-radius: 10px; border-left: 5px solid #28a745;">
+                <h4><i class="fas fa-check-double"></i> Đã cập nhật:</h4>
+                <ul style="line-height: 2.5; font-size: 1.05em; margin: 10px 0 0 0;">
+                    <li>✅ <strong>login.php</strong> - Đã sửa phân quyền mới</li>
+                    <li>✅ <strong>admin.php</strong> - Đã cập nhật kiểm tra vai_tro</li>
+                    <li>✅ <strong>Giao diện login</strong> - Đã xóa mục "Phân quyền đăng nhập"</li>
+                </ul>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-list-alt"></i> Quy tắc phân quyền MỚI:</h3>
+                <table class="role-table">
+                    <tr>
+                        <th>Vai trò trong DB</th>
+                        <th>Badge</th>
+                        <th>Chuyển đến</th>
+                        <th>Mô tả</th>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td><strong>quanly</strong></td>
+                        <td><span class="badge-custom badge-admin">QUẢN LÝ</span></td>
+                        <td><strong>→ admin.php</strong></td>
+                        <td>Quản trị viên cao nhất</td>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td><strong>nhanvien</strong></td>
+                        <td><span class="badge-custom badge-staff">NHÂN VIÊN</span></td>
+                        <td><strong>→ admin.php</strong></td>
+                        <td>Nhân viên có quyền quản trị</td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td><strong>khachhang</strong></td>
+                        <td><span class="badge-custom badge-customer">KHÁCH HÀNG</span></td>
+                        <td>→ index.php</td>
+                        <td>Khách hàng thường</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-database"></i> BƯỚC 1: Kiểm tra phân quyền trong database</h3>
+                <p>Xem tài khoản nào có vai_tro là quanly, nhanvien, khachhang:</p>
+                <div class="text-center">
+                    <a href="check_phanquyen.php" class="btn-custom btn-info" target="_blank">
+                        <i class="fas fa-search"></i> Kiểm Tra Phân Quyền
+                    </a>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-sign-in-alt"></i> BƯỚC 2: Đăng nhập</h3>
+                <p>Trang login đã được làm sạch, không còn hiển thị thông tin phân quyền:</p>
+                <div class="text-center">
+                    <a href="login.php" class="btn-custom btn-primary">
+                        <i class="fas fa-key"></i> Đăng Nhập Ngay
+                    </a>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-code"></i> Code đã thay đổi:</h3>
+
+                <h5>📝 login.php - Logic phân quyền:</h5>
+                <div class="code-box">
+                    // Lấy vai trò và chuyển về chữ thường $vai_tro = strtolower(trim($user['vai_tro'])); // PHÂN QUYỀN THEO YÊU CẦU MỚI: // 'quanly' và 'nhanvien' → admin.php // 'khachhang' → index.php if ($vai_tro === 'quanly' || $vai_tro === 'nhanvien') { // QUẢN LÝ hoặc
+                    NHÂN VIÊN → admin.php $_SESSION['admin_logged_in'] = true; header('Location: admin.php'); exit(); } else { // KHÁCH HÀNG → index.php header('Location: index.php'); exit(); }
+                </div>
+
+                <h5>📝 admin.php - Kiểm tra quyền:</h5>
+                <div class="code-box">
+                    // Kiểm tra vai_tro = 'quanly' hoặc 'nhanvien' $stmt = $conn->prepare("SELECT * FROM user WHERE email = ? AND (LOWER(vai_tro) = 'quanly' OR LOWER(vai_tro) = 'nhanvien')");
+                </div>
+
+                <h5>📝 Giao diện login - Đã xóa:</h5>
+                <div class="code-box" style="background: #f8d7da; color: #721c24;">
+                    <!-- ĐÃ XÓA -->
+                    &lt;div class="info-box"&gt; &lt;strong&gt;Phân quyền đăng nhập:&lt;/strong&gt; ... &lt;/div&gt;
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="background: #d1ecf1; padding: 25px; border-radius: 10px; border-left: 5px solid #17a2b8;">
+                <h4><i class="fas fa-info-circle"></i> Cách hoạt động:</h4>
+                <ol style="line-height: 2.5; font-size: 1.05em;">
+                    <li>User đăng nhập bằng email/password</li>
+                    <li>Hệ thống lấy <code>vai_tro</code> từ bảng <strong>user</strong></li>
+                    <li>Chuyển về chữ thường: <code>strtolower(trim($vai_tro))</code></li>
+                    <li>So sánh:
+                        <ul style="margin-top: 10px;">
+                            <li>Nếu = <strong>'quanly'</strong> hoặc <strong>'nhanvien'</strong> → <strong>admin.php</strong></li>
+                            <li>Nếu = <strong>'khachhang'</strong> hoặc khác → <strong>index.php</strong></li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="alert alert-warning" style="background: #fff3cd; padding: 25px; border-radius: 10px; border-left: 5px solid #ffc107;">
+                <h4><i class="fas fa-exclamation-triangle"></i> Lưu ý:</h4>
+                <ul style="line-height: 2;">
+                    <li>Vai trò phải chính xác: <strong>quanly</strong>, <strong>nhanvien</strong>, <strong>khachhang</strong> (chữ thường, không dấu)</li>
+                    <li>Tài khoản phải có <code>trang_thai = 'active'</code></li>
+                    <li>Password được mã hóa MD5</li>
+                    <li>Giao diện login đã sạch sẽ, không hiển thị thông tin phân quyền</li>
+                </ul>
+            </div>
+
+            <div class="alert alert-success" style="background: #d4edda; padding: 25px; border-radius: 10px; border-left: 5px solid #28a745;">
+                <h4><i class="fas fa-check-circle"></i> Kết quả mong đợi:</h4>
+                <table style="width: 100%; margin-top: 15px;">
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 12px; border: 1px solid #ddd;">Đăng nhập với vai_tro</th>
+                        <th style="padding: 12px; border: 1px solid #ddd;">Kết quả</th>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><strong>quanly</strong></td>
+                        <td style="padding: 12px; border: 1px solid #ddd;"><strong>→ admin.php ✅</strong></td>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><strong>nhanvien</strong></td>
+                        <td style="padding: 12px; border: 1px solid #ddd;"><strong>→ admin.php ✅</strong></td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td style="padding: 12px; border: 1px solid #ddd;"><strong>khachhang</strong></td>
+                        <td style="padding: 12px; border: 1px solid #ddd;">→ index.php</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="text-center" style="margin-top: 40px;">
+                <a href="check_phanquyen.php" class="btn-custom btn-info" target="_blank">
+                    <i class="fas fa-database"></i> 1. Kiểm Tra Database
+                </a>
+                <a href="login.php" class="btn-custom btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> 2. Đăng Nhập
+                </a>
+            </div>
+
+            <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 15px; text-align: center; color: white;">
+                <h3 style="margin-bottom: 15px;">
+                    <i class="fas fa-rocket"></i> HỆ THỐNG ĐÃ SẴN SÀNG!
+                </h3>
+                <p style="font-size: 1.15em; margin: 0;">
+                    <strong>quanly</strong> và <strong>nhanvien</strong> → admin.php<br>
+                    <strong>khachhang</strong> → index.php<br> Giao diện login đã gọn gàng! 🎉
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

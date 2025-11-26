@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <title>Akishop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <section id="header">
+        <a href="#"><img src="img/logo1.png" width="150px" class="logo" alt="Akishop Logo"></a>
+        <div>
+            <ul id="navbar">
+                <li><a class="active" href="index.html">Trang chủ</a></li>
+                <li><a href="shop.html">Sản phẩm</a></li>
+                <li><a href="blog.html">Tin tức</a></li>
+                <li><a href="about.html">Về chúng tôi</a></li>
+                <li><a href="contact.html">Liên hệ</a></li>
+                <li id="search-icon"><a href="#"><i class="fa-solid fa-search"></i></a></li>
+                <li id="user-icon" tabindex="0">
+                    <a href="#" tabindex="-1"><i class="fa-solid fa-user"></i></a>
+                    <div class="user-dropdown">
+                        <a href="login.php">Đăng Nhập</a>
+                        <a href="register.php">Đăng Ký</a>
+                    </div>
+                </li>
+                <li id="lg-bag"><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
+                <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>    
+        </ul> 
+        <div id="mobile">
+            <a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a>
+            <i id="bar" class="fas fa-outdent"></i>
+        </div>  
+        </section>
+    <!--HHome page-->
+    <section id="hero">
+        <button>MUA NGAY</button>
+    </section>
+    <!-- Featured -->
+     <section id="feature" class="section-p1">
+        <div class="fe-box">
+            <img src="img/features/f1.png" alt="">
+            <h6>Đặt hàng trực tuyến</h6>
+        </div>
+        <div class="fe-box">
+            <img src="img/features/f2.png" alt="">
+             <h6>Miễn phí vận chuyển</h6>
+        </div>
+        <div class="fe-box">
+            <img src="img/features/f3.png" alt="">
+            <h6>Tiết kiệm tiền</h6>
+        </div>
+        <div class="fe-box">
+            <img src="img/features/f4.png" alt="">
+            <h6>Khuyến mãi</h6>
+        </div>
+        <div class="fe-box">
+            <img src="img/features/f5.png" alt="">
+            <h6>Giá cả hợp lý</h6>
+        </div>
+        <div class="fe-box">
+            <img src="img/features/f6.png" alt="">
+            <h6>Hỗ trợ 24/7</h6>
+        </div>
+
+     </section>
+     <!-- New Product
+      <section id="product1" class="section-p1"> -->
+         <section id="header">
+        <a href="#"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <div>
+            <ul id="navbar">
+                <li><a href="index.php">Trang chủ</a></li>
+                <li><a class="active" href="shop.php">Sản phẩm</a></li>
+                <li><a href="blog.php">Tin tức</a></li>
+                <li><a href="about.php">Về chúng tôi</a></li>
+                <li><a href="contact.php">Liên hệ</a></li>
+                <li id="search-icon"><a href="#"><i class="fa-solid fa-search"></i></a></li>
+                <li id="user-icon" tabindex="0">
+                    <a href="#" tabindex="-1"><i class="fa-solid fa-user"></i></a>
+                    <div class="user-dropdown">
+                        <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']): ?>
+                            <a href="#">Xin chào, <?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+                            <a href="logout.php">Đăng xuất</a>
+                        <?php else: ?>
+                            <a href="login.php">Đăng Nhập</a>
+                            <a href="register.php">Đăng Ký</a>
+                        <?php endif; ?>
+                    </div>
+                </li>
+                <li id="lg-bag"><a href="cart.php"><i class="fa-solid fa-cart-shopping"></i></a></li>
+                <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>    
+            </ul> 
+        <div id="mobile">
+            <a href="cart.php"><i class="fa-solid fa-cart-shopping"></i></a>
+            <i id="bar" class="fas fa-outdent"></i>
+        </div>  
+        </section>
+    <!--Shop page-->
+    <section id="page-header">
+        <h2>#sanpham</h2>
+        <p>Tiết kiệm nhiều hơn với phiếu giảm giá lên tới 30%.</p>
+    </section>
+     <!-- Products -->
+      <section id="product1" class="section-p1">
+             <div class="pro-container">
+                <?php if (!empty($products)): ?>
+                    <?php foreach ($products as $product): ?>
+                        <div class="pro" onclick="window.location.href='sproduct.php?id=<?php echo $product['id_sanpham']; ?>';">
+                            <?php if (!empty($product['gia_khuyen_mai'])): ?>
+                                <div class="discount-badge discount-<?php echo htmlspecialchars($product['gia_khuyen_mai']); ?>">
+                                    <div class="percent">-<?php echo htmlspecialchars($product['gia_khuyen_mai']); ?>%</div>
+                                    <div class="text">OFF</div>
+                                </div>
+                            <?php endif; ?>
+                            <img src="<?php echo htmlspecialchars($product['hinh_anh'] ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" 
+                                 alt="<?php echo htmlspecialchars($product['ten_sanpham']); ?>">
+                            <div class="des">
+                                <span><?php echo htmlspecialchars($product['id_danhmuc'] ? $product['id_danhmuc'] : 'Sản phẩm'); ?></span>
+                                <h5><?php echo htmlspecialchars($product['ten_sanpham']); ?></h5>
+                                <div class="star">
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                </div>
+                                <h4><?php echo number_format($product['gia'], 0, ',', '.'); ?>VNĐ</h4>
+                            </div>
+                            <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12 text-center">
+                        <p>Không có sản phẩm nào.</p>
+                    </div>
+                <?php endif; ?>
+             </div>
+        </section>
+         <!-- Pagination -->
+            <h2>KHUYẾN MÃI HOT</h2>
+            <p>Hàng ngàn khuyến mãi đang chờ bạn mua.</p>
+             <!-- <div class="pro-container">
+                <div class="pro">
+                    <div class="discount-badge discount-15">
+                        <div class="percent">-15%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/savi/savi6.png" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Savi</span>
+                        <h5>Boox Savi 6</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>4.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-25">
+                        <div class="percent">-25%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/boox/tabXC.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Boõ</span>
+                        <h5>Boox Tab X C</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>22.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-20">
+                        <div class="percent">-20%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/boox/Go7color(gen2).jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Boox</span>
+                        <h5>Máy đọc sách Boox Go 7 Color (Gen II)</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>7.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-10">
+                        <div class="percent">-10%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/kindle/Paperwhite6.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kindle</span>
+                        <h5>Kindle Paperwhite 6 16Gb</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>5.590.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-30">
+                        <div class="percent">-30%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/kindle/Kindle_Scribe.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kindle</span>
+                        <h5>Kindle Scribe 2024 16Gb kèm bút cao cấp Premium</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>12.400.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-20">
+                        <div class="percent">-20%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/kobo/Sage.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kobo</span>
+                        <h5>Kobo Sage</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>8.490.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-15">
+                        <div class="percent">-15%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/kobo/koboClara.png" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kobo</span>
+                        <h5>Kobo Clara 2E</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>4.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <div class="discount-badge discount-25">
+                        <div class="percent">-25%</div>
+                        <div class="text">OFF</div>
+                    </div>
+                    <img src="img/products/reMarkable/remarkable2.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách reMarkable</span>
+                        <h5>Remarkable 2</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>10.180.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+            </div>-->
+             <section id="header">
+        <a href="#"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <div>
+            <ul id="navbar">
+                <li><a href="index.php">Trang chủ</a></li>
+                <li><a class="active" href="shop.php">Sản phẩm</a></li>
+                <li><a href="blog.php">Tin tức</a></li>
+                <li><a href="about.php">Về chúng tôi</a></li>
+                <li><a href="contact.php">Liên hệ</a></li>
+                <li id="search-icon"><a href="#"><i class="fa-solid fa-search"></i></a></li>
+                <li id="user-icon" tabindex="0">
+                    <a href="#" tabindex="-1"><i class="fa-solid fa-user"></i></a>
+                    <div class="user-dropdown">
+                        <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']): ?>
+                            <a href="#">Xin chào, <?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+                            <a href="logout.php">Đăng xuất</a>
+                        <?php else: ?>
+                            <a href="login.php">Đăng Nhập</a>
+                            <a href="register.php">Đăng Ký</a>
+                        <?php endif; ?>
+                    </div>
+                </li>
+                <li id="lg-bag"><a href="cart.php"><i class="fa-solid fa-cart-shopping"></i></a></li>
+                <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>    
+            </ul> 
+        <div id="mobile">
+            <a href="cart.php"><i class="fa-solid fa-cart-shopping"></i></a>
+            <i id="bar" class="fas fa-outdent"></i>
+        </div>  
+        </section>
+    <!--Shop page-->
+    <section id="page-header">
+        <h2>#sanpham</h2>
+        <p>Tiết kiệm nhiều hơn với phiếu giảm giá lên tới 30%.</p>
+    </section>
+     <!-- Products -->
+      <section id="product1" class="section-p1">
+             <div class="pro-container">
+                <?php if (!empty($products)): ?>
+                    <?php foreach ($products as $product): ?>
+                        <div class="pro" onclick="window.location.href='sproduct.php?id=<?php echo $product['id_sanpham']; ?>';">
+                            <?php if (!empty($product['gia_khuyen_mai'])): ?>
+                                <div class="discount-badge discount-<?php echo htmlspecialchars($product['gia_khuyen_mai']); ?>">
+                                    <div class="percent">-<?php echo htmlspecialchars($product['gia_khuyen_mai']); ?>%</div>
+                                    <div class="text">OFF</div>
+                                </div>
+                            <?php endif; ?>
+                            <img src="<?php echo htmlspecialchars($product['hinh_anh'] ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" 
+                                 alt="<?php echo htmlspecialchars($product['ten_sanpham']); ?>">
+                            <div class="des">
+                                <span><?php echo htmlspecialchars($product['id_danhmuc'] ? $product['id_danhmuc'] : 'Sản phẩm'); ?></span>
+                                <h5><?php echo htmlspecialchars($product['ten_sanpham']); ?></h5>
+                                <div class="star">
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                </div>
+                                <h4><?php echo number_format($product['gia'], 0, ',', '.'); ?>VNĐ</h4>
+                            </div>
+                            <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12 text-center">
+                        <p>Không có sản phẩm nào.</p>
+                    </div>
+                <?php endif; ?>
+             </div>
+        </section>
+         <!-- Pagination -->
+        <section> 
+        <!-- banner mid -->
+         <section id="banner" class="section-m1">
+            <h4>DỊCH VỤ SỬA CHỮA</h4>
+            <h2>Lên đến <span>Giảm từ 10%-30%</span>-Tất cả các dòng máy đọc sách.</h2>
+            <button class="normal">Tìm hiểu thêm</button>
+
+         </section>
+        <!-- Product -->
+         <!-- s
+            <h2>Sản phẩm mới</h2>
+            <p>Khám phá các sản phẩm mới nhất của chúng tôi</p>
+            <div class="pro-container">
+                <div class="pro">
+                    <img src="img/products/savi/savi6.png" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Savi</span>
+                        <h5>Boox Savi 6</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>4.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/boox/tabXC.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Boõ</span>
+                        <h5>Boox Tab X C</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>22.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/boox/Go7color(gen2).jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Boox</span>
+                        <h5>Máy đọc sách Boox Go 7 Color (Gen II)</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>7.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/kindle/Paperwhite6.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kindle</span>
+                        <h5>Kindle Paperwhite 6 16Gb</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>5.590.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/kindle/Kindle_Scribe.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kindle</span>
+                        <h5>Kindle Scribe 2024 16Gb kèm bút cao cấp Premium</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>12.400.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/kobo/Sage.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kobo</span>
+                        <h5>Kobo Sage</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>8.490.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/kobo/koboClara.png" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách Kobo</span>
+                        <h5>Kobo Clara 2E</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>4.600.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+                <div class="pro">
+                    <img src="img/products/reMarkable/remarkable2.jpg" alt="">
+                    <div class="des">
+                        <span>Máy đọc sách reMarkable</span>
+                        <h5>Remarkable 2</h5>
+                        <div class="star">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <h4>10.180.000VNĐ</h4>
+                    </div>
+                    <a href="#"><i class="fa-solid fa-cart-plus cart"></i></a>
+                </div>
+            </div>
+        </section> -->
+        <!-- New letter -->
+         <section id="newletter" class="section-p1 section-m1">
+            <div class="newtext">
+                <h4>Đăng ký nhận bản tin</h4>
+                <p>Nhận cập nhật qua Email về <span>các ưu đãi mới nhất </span>và sản phẩm mới nhất từ AkiShop.</p>
+            </div>
+            <div class="form">
+                <input type="text" placeholder="Nhập email của bạn...">
+                <button class="normal">Đăng ký</button>
+            </div>
+
+         </section>
+            <!-- footer -->
+             <footer id="section-p1">
+                <div class="col">
+                    <img class="logo" src="img/logo1.png" width="120px" alt="">
+                    <h4>Thông Tin Liên Hệ</h4>
+                    <p><Strong>Địa chỉ: </Strong>124 Lê Quang Định, phường Bình Thạnh, TP.HỒ CHÍ MINH, VIỆT NAM</p>
+                    <p><Strong>Điện thoại: </Strong>+84 123 456 789</p>
+                    <p><Strong>Giờ làm việc: </Strong> 8:00 - 17:00, Thứ 2 - Thứ 7</p>
+                    <div class="follow">
+                        <h4>Theo dõi chúng tôi</h4>
+                        <div class="icon">
+                            <i class="fa-brands fa-facebook-f"></i>
+                            <i class="fa-brands fa-telegram"></i>
+                            <i class="fa-brands fa-instagram"></i>
+                            <i class="fa-brands fa-youtube"></i>
+                        </div>
+                </div>
+                </div>
+                <div class="col">
+                    <h4>Liên hệ</h4>
+                    <a href="#">Về chúng tôi</a>
+                    <a href="#">Thông tin giao hàng</a>
+                    <a href="#">Chính sách bảo mật</a>
+                    <a href="#">Điều khoản & Điều kiện</a>
+                    <a href="#">Liên hệ chứng tôi</a>
+                </div>
+                <div class="col">
+                    <h4>Tài khoản của tôi</h4>
+                    <a href="login.php">Đăng nhập</a>
+                    <a href="register.php">Đăng ký</a>
+                    <a href="cart.html">Xem giỏ hàng</a>
+                    <a href="#">Yêu thích</a>
+                    <a href="#">Theo dõi đơn hàng</a>
+                </div>
+                <div class="col install">
+                    <p>Thanh toán an toàn cho các giao dịch trực tuyến</p>
+                    <img src="img/pay/pay.png" alt="">
+                </div>
+                <div class="copyright">
+                    <p>© 2025 by Lê Văn Túc & Huỳnh Đình Chiểu</p>
+                </div>
+             </footer>
+             <script src="script.js"></script>
+
+</body>
+</html>

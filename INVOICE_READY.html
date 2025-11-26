@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>✅ Đã tạo trang hóa đơn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 30px auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #088178 0%, #066d63 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .step-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #088178;
+        }
+        
+        .btn-custom {
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #088178;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-list {
+            line-height: 2.5;
+            font-size: 1.05em;
+        }
+        
+        .screenshot {
+            max-width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-file-invoice"></i> ĐÃ TẠO TRANG HÓA ĐƠN</h1>
+            <p style="font-size: 1.3em; margin: 10px 0 0 0;">Hệ thống thanh toán hoàn chỉnh</p>
+        </div>
+
+        <div class="content">
+            <div class="alert alert-success" style="background: #d4edda; padding: 25px; border-radius: 10px; border-left: 5px solid #28a745;">
+                <h4><i class="fas fa-check-double"></i> Đã tạo các file:</h4>
+                <ul class="feature-list">
+                    <li>✅ <strong>invoice.php</strong> - Trang hóa đơn đặt hàng</li>
+                    <li>✅ <strong>payment_cod.php</strong> - Xử lý thanh toán khi nhận hàng</li>
+                    <li>✅ <strong>payment_vnpay.php</strong> - Thanh toán VNPAY (placeholder)</li>
+                    <li>✅ <strong>cart.php</strong> - Đã cập nhật nút "Tiến hành thanh toán"</li>
+                </ul>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-list-check"></i> Tính năng hóa đơn:</h3>
+                <ul class="feature-list">
+                    <li><strong>Thông tin công ty:</strong> Công ty TNHH Aki, mã số thuế, địa chỉ, SĐT</li>
+                    <li><strong>Thông tin khách hàng:</strong> Họ tên, địa chỉ, SĐT, Email (lấy từ database)</li>
+                    <li><strong>Bảng sản phẩm:</strong> STT, Tên SP, Số lượng, Đơn giá, Thành tiền</li>
+                    <li><strong>Tổng tiền:</strong> Hiển thị rõ ràng ở cuối hóa đơn</li>
+                    <li><strong>Nút thanh toán:</strong> VNPAY và Thanh toán khi nhận hàng</li>
+                    <li><strong>Responsive:</strong> Tương thích mobile và có thể in</li>
+                </ul>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-route"></i> Luồng hoạt động:</h3>
+                <ol class="feature-list">
+                    <li><strong>Bước 1:</strong> Khách hàng vào <strong>cart.php</strong> (Giỏ hàng)</li>
+                    <li><strong>Bước 2:</strong> Click nút <strong>"Tiến hành thanh toán"</strong></li>
+                    <li><strong>Bước 3:</strong> Chuyển đến <strong>invoice.php</strong> (Hóa đơn)</li>
+                    <li><strong>Bước 4:</strong> Chọn phương thức thanh toán:
+                        <ul style="margin-top: 10px;">
+                            <li><strong>VNPAY:</strong> Thanh toán online (hiện tại redirect về COD)</li>
+                            <li><strong>COD:</strong> Thanh toán khi nhận hàng → <strong>payment_cod.php</strong></li>
+                        </ul>
+                    </li>
+                    <li><strong>Bước 5:</strong> Hiển thị thông báo đặt hàng thành công</li>
+                </ol>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-info-circle"></i> Thông tin hiển thị trên hóa đơn:</h3>
+
+                <h5>📋 Thông tin công ty (mặc định):</h5>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="margin: 5px 0;"><strong>Công ty TNHH Aki</strong></p>
+                    <p style="margin: 5px 0;">Mã số thuế: (để trống - có thể điền sau)</p>
+                    <p style="margin: 5px 0;">Địa chỉ: (để trống - có thể điền sau)</p>
+                    <p style="margin: 5px 0;">Số điện thoại: (để trống - có thể điền sau)</p>
+                </div>
+
+                <h5>👤 Thông tin khách hàng (từ database):</h5>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="margin: 5px 0;">Họ tên: <code>$user_info['ho_ten']</code></p>
+                    <p style="margin: 5px 0;">Địa chỉ: <code>$user_info['dia_chi']</code></p>
+                    <p style="margin: 5px 0;">SĐT: <code>$user_info['phone']</code></p>
+                    <p style="margin: 5px 0;">Email: <code>$user_info['email']</code></p>
+                </div>
+
+                <h5>🛍️ Sản phẩm (giả lập):</h5>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="margin: 5px 0;">Máy đọc Boox Savi 6 - 1 cái - 5.000.000 VNĐ</p>
+                    <p style="margin: 5px 0; color: #666;"><em>Sau này sẽ lấy từ giỏ hàng thực tế</em></p>
+                </div>
+            </div>
+
+            <div class="alert alert-warning" style="background: #fff3cd; padding: 25px; border-radius: 10px; border-left: 5px solid #ffc107;">
+                <h4><i class="fas fa-exclamation-triangle"></i> Lưu ý:</h4>
+                <ul style="line-height: 2;">
+                    <li><strong>Yêu cầu đăng nhập:</strong> Phải đăng nhập mới vào được invoice.php</li>
+                    <li><strong>Dữ liệu giả lập:</strong> Hiện tại sản phẩm đang hard-code, cần kết nối với giỏ hàng thực</li>
+                    <li><strong>Database:</strong> Lấy thông tin khách hàng từ bảng <code>user</code></li>
+                    <li><strong>In hóa đơn:</strong> Có thể Ctrl+P để in (ẩn nút và menu khi in)</li>
+                    <li><strong>VNPAY:</strong> Hiện tại chưa tích hợp API, tạm redirect về COD</li>
+                </ul>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-rocket"></i> Test ngay:</h3>
+                <div class="text-center">
+                    <a href="cart.php" class="btn-custom btn-primary">
+                        <i class="fas fa-shopping-cart"></i> Vào Giỏ Hàng
+                    </a>
+                    <a href="invoice.php" class="btn-custom btn-success">
+                        <i class="fas fa-file-invoice"></i> Xem Hóa Đơn
+                    </a>
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="background: #d1ecf1; padding: 25px; border-radius: 10px; border-left: 5px solid #17a2b8;">
+                <h4><i class="fas fa-code"></i> Cần phát triển tiếp:</h4>
+                <ol style="line-height: 2.5;">
+                    <li><strong>Giỏ hàng động:</strong> Lưu giỏ hàng vào session/database</li>
+                    <li><strong>Tính tổng tiền:</strong> Tự động tính từ giỏ hàng</li>
+                    <li><strong>Lưu đơn hàng:</strong> Tạo bảng <code>don_hang</code> và <code>chi_tiet_don_hang</code></li>
+                    <li><strong>Tích hợp VNPAY:</strong> API thanh toán online thực tế</li>
+                    <li><strong>Email thông báo:</strong> Gửi email xác nhận đơn hàng</li>
+                    <li><strong>Quản lý đơn hàng:</strong> Trang admin quản lý đơn hàng</li>
+                </ol>
+            </div>
+
+            <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 15px; text-align: center; color: white;">
+                <h3 style="margin-bottom: 15px;">
+                    <i class="fas fa-check-circle"></i> HOÀN THÀNH!
+                </h3>
+                <p style="font-size: 1.15em; margin: 0;">
+                    Trang hóa đơn đã sẵn sàng theo đúng mẫu!<br> Giỏ hàng → Tiến hành thanh toán → Hóa đơn → Thanh toán 🎉
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

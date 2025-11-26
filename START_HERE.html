@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>✅ Hệ thống đăng nhập đã sẵn sàng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 30px auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #088178 0%, #066d63 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .step-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #088178;
+        }
+        
+        .btn-custom {
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #088178;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .code-box {
+            background: #2d3748;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-check-circle"></i> ĐĂNG NHẬP ĐÃ SẴN SÀNG!</h1>
+            <p style="font-size: 1.2em;">Kết nối database KLTN → Bảng user</p>
+        </div>
+
+        <div class="content">
+            <div class="alert alert-info">
+                <h4><i class="fas fa-info-circle"></i> Tổng quan hệ thống:</h4>
+                <ul style="line-height: 2;">
+                    <li><strong>File:</strong> login.php (đã tạo mới hoàn toàn)</li>
+                    <li><strong>Database:</strong> KLTN (qua config/database.php)</li>
+                    <li><strong>Bảng:</strong> user</li>
+                    <li><strong>Phân quyền:</strong> vai_tro = 'admin' → admin.php</li>
+                    <li><strong>Password:</strong> Mã hóa MD5</li>
+                </ul>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-database"></i> BƯỚC 1: Xem dữ liệu bảng user</h3>
+                <p>Kiểm tra tài khoản nào có vai_tro = 'admin':</p>
+                <div class="text-center">
+                    <a href="view_nhanvien.php" class="btn-custom btn-info" target="_blank">
+                        <i class="fas fa-table"></i> Xem Dữ Liệu
+                    </a>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-wrench"></i> BƯỚC 2: Sửa vai trò admin (nếu cần)</h3>
+                <p>Nếu không có tài khoản admin, chạy script này để tạo/cập nhật:</p>
+                <div class="text-center">
+                    <a href="fix_admin_role.php" class="btn-custom btn-success" target="_blank">
+                        <i class="fas fa-user-shield"></i> Sửa Vai Trò Admin
+                    </a>
+                </div>
+                <p style="margin-top: 15px;"><small class="text-muted">Script sẽ tự động set vai_tro = 'admin' cho: admin@kltn.com, tuc@kltn.com, leduc2103@gmail.com</small></p>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-sign-in-alt"></i> BƯỚC 3: Đăng nhập</h3>
+                <p>Sau khi có tài khoản admin, đăng nhập vào hệ thống:</p>
+                <div class="text-center">
+                    <a href="login.php" class="btn-custom btn-primary">
+                        <i class="fas fa-key"></i> Đăng Nhập Ngay
+                    </a>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3><i class="fas fa-code"></i> Cơ chế hoạt động:</h3>
+
+                <h5>1. Kết nối database (config/database.php):</h5>
+                <div class="code-box">
+                    require_once 'config/database.php'; $conn = $db->getConnection();
+                </div>
+
+                <h5>2. Truy vấn tài khoản từ bảng user:</h5>
+                <div class="code-box">
+                    $stmt = $conn->prepare("SELECT * FROM user WHERE email = ? AND trang_thai = 'active'"); $stmt->execute(array($email)); $user = $stmt->fetch();
+                </div>
+
+                <h5>3. Kiểm tra password (MD5):</h5>
+                <div class="code-box">
+                    if ($user && $user['password'] === md5($password)) { // Đăng nhập thành công }
+                </div>
+
+                <h5>4. Phân quyền dựa trên vai_tro:</h5>
+                <div class="code-box">
+                    $vai_tro = strtolower(trim($user['vai_tro'])); if ($vai_tro === 'admin') { // TÀI KHOẢN ADMIN $_SESSION['admin_logged_in'] = true; header('Location: admin.php'); exit(); } else { // TÀI KHOẢN KHÁCH HÀNG header('Location: index.php'); exit(); }
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <h4><i class="fas fa-exclamation-triangle"></i> Lưu ý quan trọng:</h4>
+                <ul style="line-height: 2;">
+                    <li><strong>Vai trò admin:</strong> Phải có <code>vai_tro = 'admin'</code> (chữ thường) trong database</li>
+                    <li><strong>Trạng thái:</strong> Tài khoản phải có <code>trang_thai = 'active'</code></li>
+                    <li><strong>Password:</strong> Được mã hóa MD5, ví dụ: <code>123456</code> → <code>e10adc3949ba59abbe56e057f20f883e</code></li>
+                    <li><strong>Session:</strong> Admin được lưu trong <code>$_SESSION['admin_logged_in']</code></li>
+                </ul>
+            </div>
+
+            <div class="alert alert-success">
+                <h4><i class="fas fa-check-double"></i> Checklist:</h4>
+                <ol style="line-height: 2.5; font-size: 1.1em;">
+                    <li>✅ <strong>login.php</strong> - Đã tạo mới hoàn toàn</li>
+                    <li>✅ <strong>Kết nối database</strong> - Qua config/database.php</li>
+                    <li>✅ <strong>Truy vấn bảng user</strong> - Lấy tài khoản theo email</li>
+                    <li>✅ <strong>Phân quyền</strong> - vai_tro = 'admin' → admin.php</li>
+                    <li>⏳ <strong>Bạn cần làm:</strong> Xem dữ liệu và sửa vai_tro nếu cần!</li>
+                </ol>
+            </div>
+
+            <div class="text-center" style="margin-top: 40px;">
+                <a href="view_nhanvien.php" class="btn-custom btn-info" target="_blank">
+                    <i class="fas fa-database"></i> 1. Xem Dữ Liệu
+                </a>
+                <a href="fix_admin_role.php" class="btn-custom btn-success" target="_blank">
+                    <i class="fas fa-wrench"></i> 2. Sửa Admin
+                </a>
+                <a href="login.php" class="btn-custom btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> 3. Đăng Nhập
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
