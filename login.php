@@ -43,27 +43,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Lấy vai trò và chuyển về chữ thường để so sánh
                         $vai_tro = strtolower(trim($user['vai_tro']));
                         
-                        // Lưu session cho từng vai trò để truy cập trang quản trị
+                        // Lưu session và chuyển hướng theo từng vai trò
                         if ($vai_tro === 'quanly') {
                             $_SESSION['admin_logged_in'] = true;
                             $_SESSION['admin_id'] = $user['ma_user'];
                             $_SESSION['admin_email'] = $user['email'];
                             $_SESSION['admin_name'] = $user['ho_ten'];
+                            header('Location: index.php');
+                            exit();
                         } elseif ($vai_tro === 'nhanvienkho') {
                             $_SESSION['nhanvienkho_logged_in'] = true; 
                             $_SESSION['nhanvienkho_id'] = $user['ma_user'];
                             $_SESSION['nhanvienkho_email'] = $user['email'];
                             $_SESSION['nhanvienkho_name'] = $user['ho_ten'];
+                            header('Location: nhanvienkho.php');
+                            exit();
                         } elseif ($vai_tro === 'nhanvien') {
                             $_SESSION['nhanvien_logged_in'] = true;
                             $_SESSION['nhanvien_id'] = $user['ma_user'];
                             $_SESSION['nhanvien_email'] = $user['email'];
                             $_SESSION['nhanvien_name'] = $user['ho_ten'];
+                            header('Location: index.php');
+                            exit();
+                        } else {
+                            // Vai trò khác (khách hàng) chuyển về trang chủ
+                            header('Location: index.php');
+                            exit();
                         }
-                        
-                        // TẤT CẢ VAI TRÒ đều chuyển về index.php
-                        header('Location: index.php');
-                        exit();
                     } 
                 } else {
                     $error = 'Email hoặc mật khẩu không đúng!';
@@ -159,6 +165,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .btn-login:hover {
             background: #0a6e65;
+        }
+        .forgot-password-link {
+            text-align: right;
+            margin: -10px 0 20px 0;
+        }
+        .forgot-password-link a {
+            color: #088178;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .forgot-password-link a:hover {
+            color: #066d63;
+            text-decoration: underline;
+        }
+        .forgot-password-link a i {
+            font-size: 13px;
         }
         .register-link {
             text-align: center;
@@ -370,6 +397,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
             </div>
             
+            <div class="forgot-password-link">
+                <a href="forgot_password_simple.php"><i class="fas fa-key"></i> Quên mật khẩu?</a>
+            </div>
+            
             <button type="submit" class="btn-login">
                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </button>
@@ -379,10 +410,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Chưa có tài khoản? <a href="register.php">Đăng ký ngay</a>
         </div>
         
-        <div class="debug-link">
+        <!-- <div class="debug-link">
             <a href="view_nhanvien.php" target="_blank"><i class="fas fa-database"></i> Xem dữ liệu bảng user</a> |
             <a href="fix_admin_role.php" target="_blank"><i class="fas fa-wrench"></i> Sửa vai trò admin</a>
-        </div>
+        </div> -->
     </div>
 
     <!-- Giả định file includes/footer.php tồn tại -->

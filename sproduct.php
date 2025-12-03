@@ -121,7 +121,7 @@ include_once 'includes/cart_count.php';
 </head>
 <body>
     <section id="header">
-        <a href="#"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <a href="index.php"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
         <div>
             <ul id="navbar">
                 <li><a href="index.php">Trang chủ</a></li>
@@ -129,14 +129,22 @@ include_once 'includes/cart_count.php';
                 <li><a href="blog.php">Tin tức</a></li>
                 <li><a href="about.php">Về chúng tôi</a></li>
                 <li><a href="contact.php">Liên hệ</a></li>
-                <li id="search-icon"><a href="#"><i class="fa-solid fa-search"></i></a></li>
+                <li id="search-icon"><a href="#" onclick="toggleSearch(event)"><i class="fa-solid fa-search"></i></a></li>
                 <li id="user-icon" tabindex="0">
                     <a href="#" tabindex="-1"><i class="fa-solid fa-user"></i></a>
                     <div class="user-dropdown">
                         <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']): ?>
                             <a href="#">Xin chào, <?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
-                            <?php if (in_array($_SESSION['user_role'], array('admin', 'quanly', 'nhanvien', 'nhanvienkho'))): ?>
+                            <a href="my_orders.php">Đơn hàng của tôi</a>
+                            <?php 
+                            $user_role = isset($_SESSION['user_role']) ? strtolower(trim($_SESSION['user_role'])) : '';
+                            if ($user_role === 'quanly'): 
+                            ?>
                                 <a href="admin.php">Quản trị viên</a>
+                            <?php elseif ($user_role === 'nhanvien'): ?>
+                                <a href="nhanvienbanhang.php">Quản trị viên</a>
+                            <?php elseif ($user_role === 'nhanvienkho'): ?>
+                                <a href="nhanvienkho.php">Quản trị viên</a>
                             <?php endif; ?>
                             <a href="logout.php">Đăng xuất</a>
                         <?php else: ?>
@@ -145,6 +153,8 @@ include_once 'includes/cart_count.php';
                         <?php endif; ?>
                     </div>
                 </li>
+                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']): ?>
+                <?php endif; ?>
                 <li id="lg-bag">
                     <a href="cart.php" style="position: relative;">
                         <i class="fa-solid fa-cart-shopping"></i>
@@ -544,6 +554,29 @@ include_once 'includes/cart_count.php';
             });
         }
     </script>
-    <script src="script.js"></script>
+
+    <!-- Search Box -->
+    <div class="search-box" id="search-box">
+        <div class="search-container">
+            <form action="shop.php" method="GET" id="search-form">
+                <div class="search-input-wrapper">
+                    <input type="text" id="search-input" name="search" placeholder="Tìm kiếm sản phẩm..." autocomplete="off">
+                    <button type="submit" class="search-btn">
+                        <i class="fa-solid fa-search"></i>
+                    </button>
+                    <div class="search-suggestions" id="search-suggestions"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollToTop" title="Trở về đầu trang">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="script.js?v=<?php echo time(); ?>"></script>
+    <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
+    <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
 </body>
 </html>

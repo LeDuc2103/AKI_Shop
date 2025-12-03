@@ -58,7 +58,7 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                 include('admin/khachhang.php');
             } elseif ($action == 'donhang') {
                 include('admin/donhang.php');
-            }elseif ($action == 'danhmuc') {
+            } elseif ($action == 'danhmuc') {
                 include('admin/danhmuc.php');
             } else {
                 include('admin/dashboard.php');

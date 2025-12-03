@@ -154,7 +154,7 @@ if (isset($_GET['search_term']) && trim($_GET['search_term']) !== '') {
 $sql = "
     SELECT * FROM user 
     WHERE LOWER(vai_tro) = 'khachhang' " . $search_query . "
-    ORDER BY created_at DESC
+    ORDER BY ma_user ASC
 ";
 
 $stmt = $conn->prepare($sql);

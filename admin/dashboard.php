@@ -101,7 +101,7 @@ $stmt_recent_orders = $conn->prepare("
     SELECT dh.*, u.ho_ten  
     FROM don_hang dh
     JOIN user u ON dh.ma_user = u.ma_user
-    ORDER BY dh.created_at DESC 
+    ORDER BY dh.ma_donhang ASC 
     LIMIT 5
 ");
 $stmt_recent_orders->execute(); 

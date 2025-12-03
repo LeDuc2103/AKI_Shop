@@ -8,8 +8,104 @@ if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
     exit();
 }
 
-// Xử lý đặt hàng (sau này sẽ lưu vào database)
-// Hiện tại chỉ hiển thị thông báo thành công
+// Khởi tạo kết nối DB
+$db = new Database();
+$conn = $db->getConnection();
+
+$user_id = $_SESSION['user_id'];
+
+// Lấy thông tin user
+$stmtUser = $conn->prepare("SELECT * FROM user WHERE ma_user = ?");
+$stmtUser->execute(array($user_id));
+$user = $stmtUser->fetch();
+
+// Lấy giỏ hàng hiện tại
+$cart_items = array();
+$tong_tien_hang = 0;
+
+$sqlCart = "SELECT 
+                g.id_giohang,
+                g.id_sanpham,
+                g.so_luong,
+                g.thanh_tien,
+                s.ten_sanpham,
+                s.gia,
+                s.gia_khuyen_mai
+            FROM gio_hang g
+            INNER JOIN san_pham s ON g.id_sanpham = s.id_sanpham
+            WHERE g.ma_user = ?
+            ORDER BY g.created_at DESC";
+
+$stmtCart = $conn->prepare($sqlCart);
+$stmtCart->execute(array($user_id));
+$cart_items = $stmtCart->fetchAll();
+
+foreach ($cart_items as $item) {
+    $tong_tien_hang += $item['thanh_tien'];
+}
+
+// Nếu giỏ hàng trống thì quay lại trang giỏ hàng
+if (empty($cart_items)) {
+    header('Location: cart.php');
+    exit();
+}
+
+// Thiết lập phí ship và tổng tiền
+$tien_ship = 15000; // có thể cấu hình sau
+$tong_tien = $tong_tien_hang + $tien_ship;
+
+// Tạo đơn hàng trong bảng don_hang
+// Lấy thông tin từ user (có thể mở rộng để lấy từ form invoice sau)
+$ten_nguoinhan   = $user ? $user['ho_ten'] : 'Khách hàng';
+$diachi_nhan     = $user ? $user['dia_chi'] : '';
+$email_nguoinhan = $user ? $user['email'] : '';
+$so_dienthoai    = $user ? $user['phone'] : '';
+
+// Tạo đơn hàng trong bảng don_hang
+$sqlOrder = "INSERT INTO don_hang 
+    (ten_nguoinhan, diachi_nhan, email_nguoinhan, so_dienthoai, 
+     trangthai_thanhtoan, phuongthuc_thanhtoan, thanh_toan,
+     tien_hang, tien_ship, tong_tien, ma_user, trang_thai)
+    VALUES
+    (:ten_nguoinhan, :diachi_nhan, :email_nguoinhan, :so_dienthoai,
+     'chua_thanh_toan', 'cod', 'chưa thanh toán',
+     :tien_hang, :tien_ship, :tong_tien, :ma_user, 'cho_xu_ly')";
+
+$stmtOrder = $conn->prepare($sqlOrder);
+$stmtOrder->execute(array(
+    ':ten_nguoinhan'   => $ten_nguoinhan,
+    ':diachi_nhan'     => $diachi_nhan,
+    ':email_nguoinhan' => $email_nguoinhan,
+    ':so_dienthoai'    => $so_dienthoai,
+    ':tien_hang'       => $tong_tien_hang,
+    ':tien_ship'       => $tien_ship,
+    ':tong_tien'       => $tong_tien,
+    ':ma_user'         => $user_id
+));
+
+$ma_donhang = $conn->lastInsertId();
+
+// Lưu chi tiết đơn hàng vào bảng chitiet_donhang
+$sqlDetail = "INSERT INTO chitiet_donhang (ma_donhang, id_sanpham, so_luong, don_gia)
+              VALUES (:ma_donhang, :id_sanpham, :so_luong, :don_gia)";
+$stmtDetail = $conn->prepare($sqlDetail);
+
+foreach ($cart_items as $item) {
+    $don_gia = $item['so_luong'] > 0 ? ($item['thanh_tien'] / $item['so_luong']) : 0;
+    $stmtDetail->execute(array(
+        ':ma_donhang' => $ma_donhang,
+        ':id_sanpham' => $item['id_sanpham'],
+        ':so_luong'   => $item['so_luong'],
+        ':don_gia'    => $don_gia
+    ));
+}
+
+// Xóa giỏ hàng sau khi tạo đơn hàng thành công
+$deleteCart = $conn->prepare("DELETE FROM gio_hang WHERE ma_user = ?");
+$deleteCart->execute(array($user_id));
+
+// Lấy số lượng giỏ hàng (sẽ = 0 sau khi xóa)
+include_once 'includes/cart_count.php';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -104,6 +200,10 @@ if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
                     <a href="#" tabindex="-1"><i class="fa-solid fa-user"></i></a>
                     <div class="user-dropdown">
                         <a href="#">Xin chào, <?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+                        <a href="my_orders.php">Đơn hàng của tôi</a>
+                        <?php if (in_array($_SESSION['user_role'], array('admin', 'quanly', 'nhanvien', 'nhanvienkho'))): ?>
+                            <a href="admin.php">Quản trị viên</a>
+                        <?php endif; ?>
                         <a href="logout.php">Đăng xuất</a>
                     </div>
                 </li>
@@ -128,8 +228,10 @@ if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
         Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.</p>
         
         <div class="order-info">
+            <p><strong>Mã đơn hàng:</strong> #<?php echo $ma_donhang; ?></p>
             <p><strong>Phương thức thanh toán:</strong> Thanh toán khi nhận hàng (COD)</p>
             <p><strong>Trạng thái:</strong> Đang xử lý</p>
+            <p><strong>Tổng tiền:</strong> <?php echo number_format($tong_tien, 0, ',', '.'); ?> VNĐ</p>
             <p><strong>Thời gian giao hàng dự kiến:</strong> 3-5 ngày làm việc</p>
         </div>
         
@@ -137,7 +239,8 @@ if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
         để xác nhận đơn hàng trong thời gian sớm nhất.</p>
         
         <div class="btn-group">
-            <a href="index.php">Về trang chủ</a>
+            <a href="my_orders.php">Xem đơn hàng của tôi</a>
+            <a href="index.php" class="btn-secondary">Về trang chủ</a>
             <a href="shop.php" class="btn-secondary">Tiếp tục mua sắm</a>
         </div>
     </div>

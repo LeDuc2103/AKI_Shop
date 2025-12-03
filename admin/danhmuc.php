@@ -69,7 +69,7 @@ if ($action == 'xoa' && isset($_GET['id'])) {
 }
 
 // --- LOGIC HIỂN THỊ DANH SÁCH ---
-$stmt = $conn->prepare("SELECT * FROM danh_muc ORDER BY id_danhmuc DESC");
+$stmt = $conn->prepare("SELECT * FROM danh_muc ORDER BY id_danhmuc ASC");
 $stmt->execute();
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>

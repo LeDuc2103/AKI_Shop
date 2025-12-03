@@ -231,9 +231,12 @@ include_once 'includes/cart_count.php';
                     <a href="#" tabindex="-1"><i class="fa-solid fa-user"></i></a>
                     <div class="user-dropdown">
                         <a href="#">Xin chào, <?php echo htmlspecialchars($_SESSION['user_name']); ?></a>
+                        <a href="my_orders.php">Đơn hàng của tôi</a>
                         <a href="logout.php">Đăng xuất</a>
                     </div>
                 </li>
+                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']): ?>
+                <?php endif; ?>
                 <li id="lg-bag">
                     <a href="cart.php" style="position: relative;">
                         <i class="fa-solid fa-cart-shopping"></i>

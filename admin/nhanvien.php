@@ -226,7 +226,7 @@ if (isset($_GET['search_term']) && trim($_GET['search_term']) !== '') {
 $sql = "
     SELECT * FROM user 
     WHERE " . $where_role . $search_query . "
-    ORDER BY created_at DESC
+    ORDER BY ma_user ASC
 ";
 
 $stmt = $conn->prepare($sql);

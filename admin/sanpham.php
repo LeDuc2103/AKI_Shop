@@ -382,7 +382,7 @@ $total_products = $stmt_count->fetchColumn();
 $total_pages = ceil($total_products / $per_page);
 
 // Lấy data cho trang hiện tại
-$sql_limit = $sql . " ORDER BY sp.id_sanpham DESC LIMIT " . intval($per_page) . " OFFSET " . intval($offset);
+$sql_limit = $sql . " ORDER BY sp.id_sanpham ASC LIMIT " . intval($per_page) . " OFFSET " . intval($offset);
 $stmt = $conn->prepare($sql_limit);
 $stmt->execute($params);
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
