@@ -179,22 +179,44 @@ include_once 'includes/cart_count.php';
         .payment-buttons {
             margin-top: 40px;
             text-align: center;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         
         .payment-btn {
-            display: inline-block;
-            padding: 15px 40px;
-            margin: 10px;
-            background: #e0e0e0;
-            border: 1px solid #999;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 15px 30px;
+            background: #088178;
+            color: white;
+            border: none;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
             transition: all 0.3s;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
         .payment-btn:hover {
-            background: #d0d0d0;
+            background: #066d63;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .payment-btn.sepay-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .payment-btn.sepay-btn:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f91 100%);
+        }
+        
+        .payment-btn i {
+            font-size: 18px;
         }
         
         .back-link {
@@ -368,10 +390,13 @@ include_once 'includes/cart_count.php';
         
         <div class="payment-buttons">
             <button class="payment-btn" onclick="window.location.href='payment_vnpay.php'">
-                Thanh toán VNPAY
+                <i class="fab fa-cc-visa"></i> Thanh toán VNPAY
+            </button>
+            <button class="payment-btn sepay-btn" onclick="window.location.href='payment_sepay.php'">
+                <i class="fas fa-qrcode"></i> Thanh toán QR Code (SePay)
             </button>
             <button class="payment-btn" onclick="confirmCOD()">
-                Thanh toán khi nhận hàng
+                <i class="fas fa-money-bill-wave"></i> Thanh toán khi nhận hàng
             </button>
         </div>
     </div>

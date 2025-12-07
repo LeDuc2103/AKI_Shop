@@ -84,10 +84,13 @@ $stmtOrder->execute(array(
 // Lấy ma_donhang (primary key của bảng don_hang) từ lastInsertId
 $ma_donhang = $conn->lastInsertId();
 
-// Lưu chi tiết đơn hàng vào bảng chitiet_donhang
+// Lưu chi tiết đơn hàng vào bảng chitiet_donhang và trừ số lượng sản phẩm
 $sqlDetail = "INSERT INTO chitiet_donhang (ma_donhang, id_sanpham, so_luong, don_gia)
               VALUES (:ma_donhang, :id_sanpham, :so_luong, :don_gia)";
 $stmtDetail = $conn->prepare($sqlDetail);
+
+// Cập nhật số lượng sản phẩm
+$updateStock = $conn->prepare("UPDATE san_pham SET so_luong = so_luong - ? WHERE id_sanpham = ?");
 
 foreach ($cart_items as $item) {
     $don_gia = $item['so_luong'] > 0 ? ($item['thanh_tien'] / $item['so_luong']) : 0;
@@ -97,6 +100,9 @@ foreach ($cart_items as $item) {
         ':so_luong'   => $item['so_luong'],
         ':don_gia'    => $don_gia
     ));
+    
+    // Trừ số lượng sản phẩm trong kho
+    $updateStock->execute(array($item['so_luong'], $item['id_sanpham']));
 }
 
 // Không xóa giỏ hàng ở đây, chờ thanh toán thành công rồi mới xóa nếu cần
@@ -106,7 +112,7 @@ foreach ($cart_items as $item) {
 $order_id = (string)$ma_donhang; // order_id để gửi sang VNPay (phải là string)
 $order_desc = "Thanh toan don hang #" . $ma_donhang;
 $order_type = "other";
-$amount     = $tong_tien; // VNĐ
+$amount     = (int)$tong_tien; // VNĐ - Đảm bảo là số nguyên
 $language   = "vn";
 $bank_code  = "";
 $expire     = date('YmdHis', strtotime('+15 minutes'));

@@ -10,8 +10,8 @@ if (isset($adminInfo)) {
 <?php
 }
 ?>
-
-<a href="admin.php?action=dashboard"><i class="fas fa-tachometer-alt me-2"></i> Bảng điều khiển</a>
+<a href="index.php"><i class="fas fa-home me-2"></i> Trang chủ</a>
+<a href="admin.php?action=dashboard"><i class="fas fa-tachometer-alt me-2"></i> Thống kê</a>
 <a href="admin.php?action=sanpham"><i class="fas fa-box-open me-2"></i> Sản phẩm</a>
 <a href="admin.php?action=nhanvien"><i class="fas fa-user-tie me-2"></i> Nhân viên</a>
 <a href="admin.php?action=khachhang"><i class="fas fa-user-friends me-2"></i> Khách hàng</a>

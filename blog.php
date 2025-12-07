@@ -103,8 +103,8 @@ try {
         </section>
 
     <section id="page-header" class="blog-header">
-        <h2>#tintuc</h2>
-        <p>Đọc tất cả các trường hợp về sản phẩm của chúng tôi!</p>
+        <h1 style="color:aliceblue">Tin tức</h1>
+        <!-- <p>Đọc tất cả các trường hợp về sản phẩm của chúng tôi!</p> -->
     </section>
 
     <section id="blog">

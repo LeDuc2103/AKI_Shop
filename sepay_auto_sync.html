@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SePay Auto Sync - Background Worker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            display: none; /* Hidden iframe */
+        }
+        #status {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .log-entry {
+            padding: 5px;
+            margin: 5px 0;
+            border-left: 3px solid #088178;
+            padding-left: 10px;
+        }
+        .success { border-left-color: #27ae60; color: #27ae60; }
+        .error { border-left-color: #e74c3c; color: #e74c3c; }
+        .info { border-left-color: #3498db; color: #3498db; }
+    </style>
+</head>
+<body>
+    <div id="status">
+        <h2>SePay Auto Sync Status</h2>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        // Auto sync worker - chạy mỗi 10 giây
+        const SYNC_INTERVAL = 10000; // 10 seconds
+        let syncCount = 0;
+
+        function addLog(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logsDiv.insertBefore(logEntry, logsDiv.firstChild);
+            
+            // Keep only last 20 logs
+            while (logsDiv.children.length > 20) {
+                logsDiv.removeChild(logsDiv.lastChild);
+            }
+        }
+
+        function syncTransactions() {
+            syncCount++;
+            addLog(`Sync #${syncCount}: Checking SePay transactions...`, 'info');
+
+            fetch('sepay_sync_worker.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const msg = `Processed: ${data.processed}, Matched: ${data.matched}`;
+                        addLog(msg, data.matched > 0 ? 'success' : 'info');
+                        
+                        if (data.matched > 0) {
+                            // Có đơn hàng được thanh toán, reload trang nếu đang ở trang thanh toán
+                            if (window.parent && window.parent.location.pathname.includes('payment_sepay.php')) {
+                                window.parent.postMessage('payment_detected', '*');
+                            }
+                        }
+                    } else {
+                        addLog(`Error: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    addLog(`Network error: ${error.message}`, 'error');
+                });
+        }
+
+        // Start syncing
+        addLog('Auto sync worker started', 'success');
+        syncTransactions(); // Run immediately
+        setInterval(syncTransactions, SYNC_INTERVAL);
+    </script>
+</body>
+</html>

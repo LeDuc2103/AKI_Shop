@@ -196,8 +196,8 @@ include_once 'includes/cart_count.php';
         </section>
     <!--Shop page-->
     <section id="page-header">
-        <h2>#sanpham</h2>
-        <p>Tiết kiệm nhiều hơn với phiếu giảm giá lên tới 30%.</p>
+        <h2>SẢN PHẨM</h2>
+        <p>Tiết kiệm nhiều hơn với phiếu giảm giá lên tới 5% - 50%.</p>
     </section>
     
     <!-- Shop Container with Filter -->

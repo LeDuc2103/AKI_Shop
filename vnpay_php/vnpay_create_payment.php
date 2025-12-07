@@ -18,9 +18,18 @@ if (empty($vnp_TxnRef)) {
 
 $vnp_OrderInfo = isset($_POST['order_desc']) ? trim($_POST['order_desc']) : 'Thanh toan don hang';
 $vnp_OrderType = isset($_POST['order_type']) ? trim($_POST['order_type']) : 'other';
-$vnp_Amount = isset($_POST['amount']) ? (int)($_POST['amount'] * 100) : 0; // Nhân 100 để chuyển sang đơn vị xu
+
+// Lấy số tiền và validate
+$amount_input = isset($_POST['amount']) ? trim($_POST['amount']) : '0';
+// Làm sạch số tiền (loại bỏ dấu phẩy, khoảng trắng nếu có)
+$amount_input = str_replace(array(',', ' '), '', $amount_input);
+// Chuyển sang số nguyên
+$amount_value = (float)$amount_input;
+// VNPay yêu cầu số tiền tính bằng đơn vị nhỏ nhất (VNĐ * 100)
+$vnp_Amount = (int)($amount_value * 100);
+
 if ($vnp_Amount <= 0) {
-    die("Lỗi: Số tiền không hợp lệ");
+    die("Lỗi: Số tiền không hợp lệ (Amount: " . $amount_input . ", Calculated: " . $vnp_Amount . ")");
 }
 
 $vnp_Locale = isset($_POST['language']) ? trim($_POST['language']) : 'vn';

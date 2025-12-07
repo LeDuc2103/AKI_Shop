@@ -26,7 +26,8 @@ function getBaseUrl() {
 }
 
 $vnp_TmnCode = "Y0XCP3EQ"; //Website ID in VNPAY System
-$vnp_HashSecret = "5YJ5TJAMLG3DJQ61LJZSV7IIKQ1SBS55"; //Secret key
+$vnp_HashSecret = "5YJ5TJAMLG3DJQ61LJZSV7I
+IKQ1SBS55"; //Secret key
 $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
 // Tự động detect URL trả về dựa trên URL hiện tại

@@ -55,12 +55,15 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'donhang';
             <?php
             }
             ?>
-            
+            <a href="index.php"><i class="fas fa-home me-2"></i> Trang chủ</a>
             <a href="nhanvienbanhang.php?action=donhang" class="<?php echo ($action == 'donhang') ? 'active' : ''; ?>">
                 <i class="fas fa-receipt me-2"></i> Cập nhật đơn hàng
             </a>
             <a href="nhanvienbanhang.php?action=doi_tra" class="<?php echo ($action == 'doi_tra') ? 'active' : ''; ?>">
                 <i class="fas fa-undo-alt me-2"></i> Quản lý đổi trả
+            </a>
+            <a href="nhanvienbanhang.php?action=danh_gia" class="<?php echo ($action == 'danh_gia') ? 'active' : ''; ?>">
+                <i class="fas fa-star me-2"></i> Quản lý Đánh giá
             </a>
             <a href="nhanvienbanhang.php?action=tin_tuc" class="<?php echo ($action == 'tin_tuc') ? 'active' : ''; ?>">
                 <i class="fas fa-newspaper me-2"></i> Quản lý tin tức
@@ -71,7 +74,6 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'donhang';
             <a href="nhanvienbanhang.php?action=hotro" class="<?php echo ($action == 'hotro') ? 'active' : ''; ?>">
                 <i class="fas fa-headset me-2"></i> Hỗ Trợ
             </a>
-            <a href="index.php"><i class="fas fa-home me-2"></i> Trang chủ</a>
             <a href="logout.php" class="text-danger"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a>
         </div>
 
@@ -87,6 +89,8 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'donhang';
                 include('nhanvien/donhang.php');
             } elseif ($action == 'doi_tra') {
                 include('nhanvien/doi_tra.php');
+            } elseif ($action == 'danh_gia') {
+                include('nhanvien/danh_gia.php');
             } elseif ($action == 'tin_tuc') {
                 include('nhanvien/tin_tuc.php');
             } elseif ($action == 'banner') {

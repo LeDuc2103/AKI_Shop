@@ -32,6 +32,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_id'])) {
         $error_message = 'Trạng thái không hợp lệ.';
     } else {
         try {
+            // Nếu chấp nhận đổi trả (approved), hoàn lại số lượng sản phẩm
+            if ($new_status == 'approved') {
+                // Lấy thông tin đơn hàng để hoàn lại số lượng
+                $returnInfo = $conn->prepare("SELECT ma_donhang FROM don_hang_doi_tra WHERE id = ?");
+                $returnInfo->execute(array($return_id));
+                $returnData = $returnInfo->fetch(PDO::FETCH_ASSOC);
+                
+                if ($returnData) {
+                    $ma_donhang = $returnData['ma_donhang'];
+                    
+                    // Lấy chi tiết sản phẩm trong đơn hàng
+                    $detailStmt = $conn->prepare("SELECT id_sanpham, so_luong FROM chitiet_donhang WHERE ma_donhang = ?");
+                    $detailStmt->execute(array($ma_donhang));
+                    $details = $detailStmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    // Hoàn lại số lượng cho từng sản phẩm
+                    $restoreStock = $conn->prepare("UPDATE san_pham SET so_luong = so_luong + ? WHERE id_sanpham = ?");
+                    foreach ($details as $detail) {
+                        $restoreStock->execute(array($detail['so_luong'], $detail['id_sanpham']));
+                    }
+                    
+                    // Cập nhật trạng thái đơn hàng thành 'huy'
+                    $updateOrder = $conn->prepare("UPDATE don_hang SET trang_thai = 'huy' WHERE ma_donhang = ?");
+                    $updateOrder->execute(array($ma_donhang));
+                }
+            }
+            
             $update = $conn->prepare("UPDATE don_hang_doi_tra SET status = ?, ly_do = ly_do, updated_at = NOW() WHERE id = ?");
             $update->execute(array($new_status, $return_id));
             $success_message = 'Cập nhật trạng thái đổi trả thành công.';

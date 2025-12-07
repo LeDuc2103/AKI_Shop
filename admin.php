@@ -8,6 +8,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] != true
     exit();
 }
 
+// Khởi tạo database connection
+$db = new Database();
 $conn = $db->getConnection();
 
 // Lấy thông tin admin

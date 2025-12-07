@@ -84,7 +84,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 // Xem chi tiết đơn hàng
 if ($ma_donhang_chi_tiet > 0) {
 
-    $order_status_options = array('cho_xu_ly', 'xac_nhan', 'da_xuat_kho', 'hoan_thanh', 'huy');
+    $order_status_options = array('cho_xu_ly', 'xac_nhan', 'hoan_thanh', 'huy');
     $payment_status_options = array('chua_thanh_toan', 'da_thanh_toan');
     $success_message = '';
     $error_message = '';
@@ -195,7 +195,7 @@ if ($ma_donhang_chi_tiet > 0) {
                                     <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save"></i> Cập nhật</button>
                                 </div>
                             </form>
-                            <small class="text-muted d-block mt-2">Chuyển trạng thái qua các giai đoạn: Chờ xử lý → Đã xác nhận → Đã xuất kho → Hoàn thành hoặc Hủy.</small>
+                            <small class="text-muted d-block mt-2">Chuyển trạng thái qua các giai đoạn: Chờ xử lý → Đã xác nhận → Hoàn thành hoặc Hủy.</small>
                         </div>
                     </div>
                     <div class="col-md-6">

@@ -19,6 +19,11 @@ try {
     $db = new Database();
     $conn = $db->getConnection();
     
+    // Lấy banners cho trang chủ
+    $stmt = $conn->prepare("SELECT * FROM banners WHERE loai_banner = 'Trang_chu' ORDER BY created_at DESC");
+    $stmt->execute();
+    $banners = $stmt->fetchAll();
+    
     // Đếm tổng số sản phẩm khuyến mãi
     $stmt = $conn->prepare("SELECT COUNT(*) as total FROM san_pham WHERE gia_khuyen_mai > 0");
     $stmt->execute();
@@ -122,6 +127,28 @@ include_once 'includes/cart_count.php';
         </section>
     <!--Home page-->
     <section id="hero">
+        <?php if (!empty($banners)): ?>
+            <div class="banner-slideshow">
+                <?php foreach ($banners as $index => $banner): ?>
+                    <div class="banner-slide <?php echo $index === 0 ? 'active' : ''; ?>" style="background-image: url('<?php echo htmlspecialchars($banner['hinh_anh']); ?>');">
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <!-- Navigation dots -->
+            <div class="banner-dots">
+                <?php foreach ($banners as $index => $banner): ?>
+                    <span class="dot <?php echo $index === 0 ? 'active' : ''; ?>" onclick="currentSlide(<?php echo $index; ?>)"></span>
+                <?php endforeach; ?>
+            </div>
+            
+            <!-- Navigation arrows -->
+            <a class="banner-prev" onclick="changeSlide(-1)">&#10094;</a>
+            <a class="banner-next" onclick="changeSlide(1)">&#10095;</a>
+        <?php else: ?>
+            <!-- Fallback banner if no banners in database -->
+            <div class="banner-slide active" style="background-image: url('img/banner3.png');"></div>
+        <?php endif; ?>
         <button>MUA NGAY</button>
     </section>
     <!-- Featured -->
@@ -358,6 +385,64 @@ include_once 'includes/cart_count.php';
              <button id="scrollToTop" title="Trở về đầu trang">
                  <i class="fas fa-arrow-up"></i>
              </button>
+
+             <script>
+                // Banner Slideshow JavaScript
+                let slideIndex = 0;
+                let slideTimer;
+                
+                function showSlides(n) {
+                    let slides = document.getElementsByClassName("banner-slide");
+                    let dots = document.getElementsByClassName("dot");
+                    
+                    if (!slides.length) return;
+                    
+                    if (n >= slides.length) { slideIndex = 0; }
+                    if (n < 0) { slideIndex = slides.length - 1; }
+                    
+                    // Hide all slides
+                    for (let i = 0; i < slides.length; i++) {
+                        slides[i].classList.remove("active");
+                    }
+                    
+                    // Remove active from all dots
+                    for (let i = 0; i < dots.length; i++) {
+                        dots[i].classList.remove("active");
+                    }
+                    
+                    // Show current slide
+                    slides[slideIndex].classList.add("active");
+                    dots[slideIndex].classList.add("active");
+                }
+                
+                function changeSlide(n) {
+                    clearTimeout(slideTimer);
+                    slideIndex += n;
+                    showSlides(slideIndex);
+                    autoSlide();
+                }
+                
+                function currentSlide(n) {
+                    clearTimeout(slideTimer);
+                    slideIndex = n;
+                    showSlides(slideIndex);
+                    autoSlide();
+                }
+                
+                function autoSlide() {
+                    slideTimer = setTimeout(function() {
+                        slideIndex++;
+                        showSlides(slideIndex);
+                        autoSlide();
+                    }, 3000); // Change banner every 3 seconds
+                }
+                
+                // Start slideshow on page load
+                document.addEventListener('DOMContentLoaded', function() {
+                    showSlides(slideIndex);
+                    autoSlide();
+                });
+             </script>
 
              <script src="script.js?v=<?php echo time(); ?>"></script>
              <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
