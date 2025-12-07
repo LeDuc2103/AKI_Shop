@@ -23,6 +23,7 @@ echo "<!DOCTYPE html>
         <h1>📊 Dữ liệu bảng user</h1>";
 
 try {
+    $db = new Database();
     $conn = $db->getConnection();
     
     $stmt = $conn->query("SELECT * FROM user where vai_tro == 'quanly' vai_tro == 'nhanvien' ORDER BY ma_user");

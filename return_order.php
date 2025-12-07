@@ -22,6 +22,7 @@ $conn->exec("CREATE TABLE IF NOT EXISTS don_hang_doi_tra (
     ma_donhang BIGINT(20) NOT NULL,
     ma_user BIGINT(20) NOT NULL,
     ly_do TEXT,
+    bang_chung VARCHAR(250) DEFAULT NULL,
     status ENUM('pending','approved','rejected') DEFAULT 'pending',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -48,17 +49,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error_message)) {
     if ($reason == '') {
         $error_message = 'Vui lòng nhập lý do đổi trả.';
     } else {
-        $checkStmt = $conn->prepare("SELECT * FROM don_hang_doi_tra WHERE ma_donhang = ?");
-        $checkStmt->execute(array($order_id));
-        $existing = $checkStmt->fetch();
-        if ($existing) {
-            $updateStmt = $conn->prepare("UPDATE don_hang_doi_tra SET ly_do = ?, status = 'pending', updated_at = NOW() WHERE ma_donhang = ?");
-            $updateStmt->execute(array($reason, $order_id));
-        } else {
-            $insertStmt = $conn->prepare("INSERT INTO don_hang_doi_tra (ma_donhang, ma_user, ly_do, status, updated_at) VALUES (?, ?, ?, 'pending', NOW())");
-            $insertStmt->execute(array($order_id, $user_id, $reason));
+        // Xử lý upload bằng chứng (hình ảnh hoặc video)
+        $bang_chung = '';
+        if (isset($_FILES['evidence']) && $_FILES['evidence']['error'] == 0) {
+            $allowed_types = array('image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/mov');
+            $max_size = 50 * 1024 * 1024; // 50MB
+            
+            $file_type = $_FILES['evidence']['type'];
+            $file_size = $_FILES['evidence']['size'];
+            
+            if (!in_array($file_type, $allowed_types)) {
+                $error_message = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF) hoặc video (MP4, AVI, MOV).';
+            } elseif ($file_size > $max_size) {
+                $error_message = 'Kích thước file không được vượt quá 50MB.';
+            } else {
+                // Tạo thư mục nếu chưa có
+                $upload_dir = 'img/evidence/';
+                if (!file_exists($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                
+                // Tạo tên file unique
+                $file_extension = pathinfo($_FILES['evidence']['name'], PATHINFO_EXTENSION);
+                $new_filename = 'evidence_' . $order_id . '_' . time() . '.' . $file_extension;
+                $upload_path = $upload_dir . $new_filename;
+                
+                if (move_uploaded_file($_FILES['evidence']['tmp_name'], $upload_path)) {
+                    $bang_chung = $upload_path;
+                } else {
+                    $error_message = 'Lỗi khi upload file. Vui lòng thử lại.';
+                }
+            }
         }
-        $success_message = 'Yêu cầu đổi trả đã được gửi. Chúng tôi sẽ liên hệ bạn sớm.';
+        
+        if (empty($error_message)) {
+            $checkStmt = $conn->prepare("SELECT * FROM don_hang_doi_tra WHERE ma_donhang = ?");
+            $checkStmt->execute(array($order_id));
+            $existing = $checkStmt->fetch();
+            if ($existing) {
+                if ($bang_chung) {
+                    $updateStmt = $conn->prepare("UPDATE don_hang_doi_tra SET ly_do = ?, bang_chung = ?, status = 'pending', updated_at = NOW() WHERE ma_donhang = ?");
+                    $updateStmt->execute(array($reason, $bang_chung, $order_id));
+                } else {
+                    $updateStmt = $conn->prepare("UPDATE don_hang_doi_tra SET ly_do = ?, status = 'pending', updated_at = NOW() WHERE ma_donhang = ?");
+                    $updateStmt->execute(array($reason, $order_id));
+                }
+            } else {
+                if ($bang_chung) {
+                    $insertStmt = $conn->prepare("INSERT INTO don_hang_doi_tra (ma_donhang, ma_user, ly_do, bang_chung, status, updated_at) VALUES (?, ?, ?, ?, 'pending', NOW())");
+                    $insertStmt->execute(array($order_id, $user_id, $reason, $bang_chung));
+                } else {
+                    $insertStmt = $conn->prepare("INSERT INTO don_hang_doi_tra (ma_donhang, ma_user, ly_do, status, updated_at) VALUES (?, ?, ?, 'pending', NOW())");
+                    $insertStmt->execute(array($order_id, $user_id, $reason));
+                }
+            }
+            $success_message = 'Yêu cầu đổi trả đã được gửi. Chúng tôi sẽ liên hệ bạn sớm.';
+        }
     }
 }
 
@@ -140,7 +186,7 @@ include_once 'includes/cart_count.php';
 </head>
 <body>
     <section id="header">
-        <a href="index.php"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <a href="index.php"><img src="img/logo7.png" width="150px" class="logo" alt="KLTN Logo"></a>
         <div>
             <ul id="navbar">
                 <li><a href="index.php">Trang chủ</a></li>
@@ -196,10 +242,20 @@ include_once 'includes/cart_count.php';
                 <p><strong>Tổng tiền:</strong> <?php echo number_format($order['tong_tien'], 0, ',', '.'); ?> VNĐ</p>
             </div>
 
-            <form method="post" action="return_order.php">
+            <form method="post" action="return_order.php" enctype="multipart/form-data">
                 <input type="hidden" name="order_id" value="<?php echo $order['ma_donhang']; ?>">
                 <label for="reason"><strong>Lý do đổi trả</strong></label>
-                <textarea name="reason" id="reason" placeholder="Mô tả chi tiết vấn đề bạn gặp phải (sai sản phẩm, lỗi, thiếu phụ kiện...)"></textarea>
+                <textarea name="reason" id="reason" placeholder="Mô tả chi tiết vấn đề bạn gặp phải (sai sản phẩm, lỗi, thiếu phụ kiện...)" required></textarea>
+                
+                <div style="margin-top: 15px;">
+                    <label for="evidence"><strong>Bằng chứng (Hình ảnh hoặc Video)</strong></label>
+                    <p style="font-size: 13px; color: #666; margin: 5px 0;">
+                        <i class="fas fa-info-circle"></i> Upload hình ảnh hoặc video chứng minh vấn đề (tối đa 50MB)
+                    </p>
+                    <input type="file" name="evidence" id="evidence" accept="image/jpeg,image/png,image/gif,video/mp4,video/avi,video/mov" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
+                    <small style="color: #888;">Hỗ trợ: JPG, PNG, GIF, MP4, AVI, MOV</small>
+                </div>
+                
                 <div class="form-actions">
                     <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Gửi yêu cầu</button>
                     <a href="my_orders.php" class="btn-secondary" style="text-decoration: none;"><i class="fas fa-arrow-left"></i> Quay lại đơn hàng</a>

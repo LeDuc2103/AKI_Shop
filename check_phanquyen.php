@@ -34,6 +34,7 @@ echo "<!DOCTYPE html>
         </div>";
 
 try {
+    $db = new Database();
     $conn = $db->getConnection();
     
     $stmt = $conn->query("SELECT ma_user, ho_ten, email, vai_tro, trang_thai FROM user ORDER BY 

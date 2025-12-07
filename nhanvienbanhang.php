@@ -8,6 +8,7 @@ if (!isset($_SESSION['nhanvien_logged_in']) || $_SESSION['nhanvien_logged_in'] !
     exit();
 }
 
+$db = new Database();
 $conn = $db->getConnection();
 
 // Lấy thông tin nhân viên

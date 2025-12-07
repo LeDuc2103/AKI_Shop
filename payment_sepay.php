@@ -107,8 +107,8 @@ try {
         ));
     }
     
-    // Create transaction record
-    $transaction_content = "Thanh Toan Don Hang " . $order_code;
+    // Create transaction record - Format: "DH" + order_code
+    $transaction_content = "DH" . $order_code;
     $stmt_trans = $conn->prepare("
         INSERT INTO transactions (
             ma_donhang, account_number, transaction_content, 

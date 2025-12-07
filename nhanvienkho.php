@@ -3,6 +3,7 @@
 session_start();
 require_once 'config/database.php';
 // Lấy đối tượng kết nối PDO (biến $conn) từ đối tượng $db
+$db = new Database();
 $conn = $db->getConnection();
 
 // Kiểm tra biến $conn phải tồn tại sau khi include

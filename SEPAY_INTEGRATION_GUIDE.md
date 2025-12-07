@@ -40,10 +40,10 @@ $order_code = "3312";
 - order_code: 3312
 - tong_tien: 25000
 - trangthai_thanhtoan: 'chua_thanh_toan'
-- phuong_thuc_thanh_toan: 'SePay QR'
+- phuongthuc_thanhtoan: 'SePay QR'
 
 // Lưu vào bảng transactions:
-- transaction_content: "Thanh Toan Don Hang 3312"
+- transaction_content: "DH3312"  // Format mới: DH + order_code
 - is_processed: 0
 
 // Trừ tồn kho sản phẩm
@@ -57,7 +57,7 @@ URL: `sepay-php-main/payment_page.php?order_code=3312&amount=25000`
 - ✅ Mã QR để quét (VietQR format)
 - ✅ Thông tin ngân hàng: MBBank - 0981523130 - LE VAN TUC
 - ✅ Số tiền: 25.000 VNĐ
-- ✅ Nội dung CK: "Thanh Toan Don Hang 3312"
+- ✅ Nội dung CK: "DH3312" (Format: DH + order_code)
 - ✅ Đếm ngược 5 phút
 - ✅ Danh sách giao dịch thời gian thực
 
@@ -88,7 +88,7 @@ $api_url = 'https://my.sepay.vn/userapi/transactions/list?account_number=0981523
 Authorization: Bearer 7O2MCQT0UISAX1BNW3KGZFHKESPOJOC4HRUE1MEBXDBABIELFARZWUL68FNYV2MD
 
 // Tìm giao dịch khớp với regex:
-$pattern = '/(?:Thanh\s*Toan\s*)?Don\s*Hang\s*3312/i';
+$pattern = '/DH\s*3312/i';
 
 // Nếu tìm thấy:
 - UPDATE don_hang SET trangthai_thanhtoan='da_thanh_toan', trang_thai='xac_nhan'
@@ -172,14 +172,13 @@ CHECK_INTERVAL: 5 seconds
 10. Đếm ngược thời gian
 
 ### 🔍 Pattern matching linh hoạt
-Regex: `/(?:Thanh\s*Toan\s*)?Don\s*Hang\s*3312/i`
+Regex: `/DH\s*3312/i`
 
 **Chấp nhận các format:**
-- "Thanh Toan Don Hang 3312" ✅
-- "ThanhToanDonHang3312" ✅
-- "Don Hang 3312" ✅
-- "THANH TOAN DON HANG 3312" ✅
-- "thanh toan don hang 3312" ✅
+- "DH3312" ✅
+- "DH 3312" ✅
+- "dh3312" ✅
+- "DH  3312" ✅ (nhiều khoảng trắng)
 
 ## 🧪 Test
 
@@ -191,7 +190,7 @@ Regex: `/(?:Thanh\s*Toan\s*)?Don\s*Hang\s*3312/i`
    - Ngân hàng: MBBank
    - STK: 0981523130
    - Số tiền: (theo đơn hàng)
-   - Nội dung: **Thanh Toan Don Hang XXXX** (XXXX là mã đơn)
+   - Nội dung: **DH + mã đơn** (VD: DH1234, DH5678)
 5. Chờ 5 giây → Trang tự động chuyển về success
 
 ### Kiểm tra log:
@@ -201,7 +200,7 @@ cat sepay_worker.log
 
 # Log mẫu:
 [2025-12-07 10:30:15] Checking order 3312 - Found 10 transactions
-[2025-12-07 10:30:20] ✅ MATCHED! Order 3312 - Thanh Toan Don Hang 3312 - 25000 VND
+[2025-12-07 10:30:20] ✅ MATCHED! Order 3312 - DH3312 - 25000 VND
 [2025-12-07 10:30:20] Database updated for order 3312
 ```
 

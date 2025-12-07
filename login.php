@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($email) && !empty($password)) {
         try {
             // Lấy kết nối database
+            $db = new Database();
             $conn = $db->getConnection();
             
             // 1. Truy vấn tài khoản bất kể trạng thái
@@ -345,7 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <section id="header">
-        <a href="index.php"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Shop Logo"></a>
+        <a href="index.php"><img src="img/logo7.png" width="150px" class="logo" alt="KLTN Shop Logo"></a>
         <div>
             <ul id="navbar">
                 <li><a href="index.php">Trang chủ</a></li>

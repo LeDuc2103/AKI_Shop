@@ -68,6 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_id'])) {
     }
 }
 
+// Phân trang
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$per_page = 10;
+$offset = ($page - 1) * $per_page;
+
+// Đếm tổng số yêu cầu đổi trả
+$count_stmt = $conn->query("SELECT COUNT(*) as total FROM don_hang_doi_tra");
+$count_result = $count_stmt->fetch(PDO::FETCH_ASSOC);
+$total = $count_result['total'];
+$total_pages = ceil($total / $per_page);
+
+// Lấy danh sách yêu cầu đổi trả với phân trang
 $stmt = $conn->query("SELECT 
         r.*,
         d.ten_nguoinhan,
@@ -79,7 +91,8 @@ $stmt = $conn->query("SELECT
     FROM don_hang_doi_tra r
     LEFT JOIN don_hang d ON r.ma_donhang = d.ma_donhang
     LEFT JOIN user u ON r.ma_user = u.ma_user
-    ORDER BY r.id ASC");
+    ORDER BY r.id DESC
+    LIMIT " . intval($per_page) . " OFFSET " . intval($offset));
 $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -112,9 +125,12 @@ $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($requests as $index => $req): ?>
+                            <?php 
+                            $start_index = ($page - 1) * $per_page;
+                            foreach ($requests as $index => $req): 
+                            ?>
                                 <tr>
-                                    <td><?php echo $index + 1; ?></td>
+                                    <td><?php echo $start_index + $index + 1; ?></td>
                                     <td>
                                         <strong>#<?php echo $req['ma_donhang']; ?></strong><br>
                                         <small><?php echo number_format($req['tong_tien'], 0, ',', '.'); ?>₫</small>
@@ -154,6 +170,67 @@ $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Phân trang -->
+                <?php if ($total_pages > 1): ?>
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <!-- Nút Previous -->
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="admin.php?action=doi_tra&page=<?php echo $page - 1; ?>">
+                                    <i class="fas fa-chevron-left"></i> Trước
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <!-- Số trang -->
+                        <?php 
+                        $start_page = max(1, $page - 2);
+                        $end_page = min($total_pages, $page + 2);
+                        
+                        if ($start_page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="admin.php?action=doi_tra&page=1">1</a>
+                            </li>
+                            <?php if ($start_page > 2): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        
+                        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                            <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>">
+                                <a class="page-link" href="admin.php?action=doi_tra&page=<?php echo $i; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($end_page < $total_pages): ?>
+                            <?php if ($end_page < $total_pages - 1): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                            <li class="page-item">
+                                <a class="page-link" href="admin.php?action=doi_tra&page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <!-- Nút Next -->
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="admin.php?action=doi_tra&page=<?php echo $page + 1; ?>">
+                                    Sau <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                    
+                    <p class="text-center text-muted mt-2">
+                        Hiển thị trang <?php echo $page; ?> / <?php echo $total_pages; ?> 
+                        (Tổng <?php echo $total; ?> yêu cầu)
+                    </p>
+                </nav>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

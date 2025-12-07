@@ -62,6 +62,8 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                 include('admin/donhang.php');
             } elseif ($action == 'danhmuc') {
                 include('admin/danhmuc.php');
+            } elseif ($action == 'hoan_tien') {
+                include('admin/hoan_tien.php');
             } else {
                 include('admin/dashboard.php');
             }

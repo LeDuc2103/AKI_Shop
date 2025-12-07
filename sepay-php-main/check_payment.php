@@ -89,8 +89,8 @@ try {
     $transactions = $data['transactions'];
     logSePay("Checking order {$order_code} - Found " . count($transactions) . " transactions");
     
-    // Match pattern
-    $pattern = '/(?:Thanh\s*Toan\s*)?Don\s*Hang\s*' . $order_code . '/i';
+    // Match pattern - Format: "DH" + order_code (ví dụ: DH8976)
+    $pattern = '/DH\s*' . $order_code . '/i';
     $order_amount = floatval($order['tong_tien']);
     $matched_transaction = null;
     

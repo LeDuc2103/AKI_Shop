@@ -20,6 +20,90 @@ $order_details = array();
 $success_message = '';
 $error_message = '';
 
+// Xử lý yêu cầu hủy đơn và hoàn tiền
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cancel_refund'])) {
+    $order_id_cancel = isset($_POST['order_id_cancel']) ? intval($_POST['order_id_cancel']) : 0;
+    $so_tai_khoan = isset($_POST['so_tai_khoan']) ? trim($_POST['so_tai_khoan']) : '';
+    $ten_ngan_hang = isset($_POST['ten_ngan_hang']) ? trim($_POST['ten_ngan_hang']) : '';
+    $ly_do_huy = isset($_POST['ly_do_huy']) ? trim($_POST['ly_do_huy']) : '';
+    
+    if ($order_id_cancel <= 0) {
+        $error_message = 'Đơn hàng không hợp lệ.';
+    } elseif (empty($so_tai_khoan)) {
+        $error_message = 'Vui lòng nhập số tài khoản.';
+    } elseif (empty($ten_ngan_hang)) {
+        $error_message = 'Vui lòng nhập tên ngân hàng.';
+    } elseif (empty($ly_do_huy)) {
+        $error_message = 'Vui lòng nhập lý do hủy đơn.';
+    } else {
+        try {
+            $db = new Database();
+            $conn = $db->getConnection();
+            
+            // Kiểm tra đơn hàng
+            $checkStmt = $conn->prepare("SELECT * FROM don_hang WHERE ma_donhang = ? AND ma_user = ?");
+            $checkStmt->execute(array($order_id_cancel, $user_id));
+            $orderCancel = $checkStmt->fetch();
+            
+            if (!$orderCancel) {
+                $error_message = 'Không tìm thấy đơn hàng.';
+            } elseif (!in_array($orderCancel['trang_thai'], array('cho_xu_ly', 'xac_nhan'))) {
+                $error_message = 'Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xử lý" hoặc "Đã xác nhận".';
+            } elseif ($orderCancel['trangthai_thanhtoan'] != 'da_thanh_toan') {
+                $error_message = 'Chỉ có thể yêu cầu hoàn tiền với đơn hàng đã thanh toán.';
+            } else {
+                // Tạo bảng hoan_tien nếu chưa có
+                $conn->exec("CREATE TABLE IF NOT EXISTS hoan_tien (
+                    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                    ma_donhang BIGINT(20) NOT NULL,
+                    ma_user BIGINT(20) NOT NULL,
+                    so_tai_khoan VARCHAR(50) NOT NULL,
+                    ten_ngan_hang VARCHAR(100) NOT NULL,
+                    ly_do TEXT,
+                    so_tien DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    trang_thai ENUM('pending','approved','rejected') DEFAULT 'pending',
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (id),
+                    KEY idx_ma_donhang (ma_donhang),
+                    KEY idx_ma_user (ma_user)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
+                
+                // Kiểm tra đã có yêu cầu hoàn tiền chưa
+                $checkRefund = $conn->prepare("SELECT * FROM hoan_tien WHERE ma_donhang = ?");
+                $checkRefund->execute(array($order_id_cancel));
+                $existingRefund = $checkRefund->fetch();
+                
+                if ($existingRefund) {
+                    $error_message = 'Đơn hàng này đã có yêu cầu hoàn tiền trước đó.';
+                } else {
+                    // Lưu yêu cầu hoàn tiền
+                    $insertRefund = $conn->prepare("INSERT INTO hoan_tien (ma_donhang, ma_user, so_tai_khoan, ten_ngan_hang, ly_do, so_tien, trang_thai) VALUES (?, ?, ?, ?, ?, ?, 'chua_hoan_tien')");
+                    $insertRefund->execute(array($order_id_cancel, $user_id, $so_tai_khoan, $ten_ngan_hang, $ly_do_huy, $orderCancel['tong_tien']));
+                    
+                    // Cập nhật trạng thái đơn hàng thành "đã hủy"
+                    $updateOrder = $conn->prepare("UPDATE don_hang SET trang_thai = 'da_huy' WHERE ma_donhang = ?");
+                    $updateOrder->execute(array($order_id_cancel));
+                    
+                    // Cập nhật lại số lượng sản phẩm
+                    $stmtItems = $conn->prepare("SELECT id_sanpham, so_luong FROM chitiet_donhang WHERE ma_donhang = ?");
+                    $stmtItems->execute(array($order_id_cancel));
+                    $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    foreach ($items as $item) {
+                        $updateQty = $conn->prepare("UPDATE san_pham SET so_luong = so_luong + ? WHERE id_sanpham = ?");
+                        $updateQty->execute(array($item['so_luong'], $item['id_sanpham']));
+                    }
+                    
+                    $success_message = 'Yêu cầu hủy đơn và hoàn tiền đã được gửi thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.';
+                }
+            }
+        } catch (PDOException $e) {
+            $error_message = 'Lỗi: ' . $e->getMessage();
+        }
+    }
+}
+
 // Xử lý gửi yêu cầu đổi trả
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_return'])) {
     $order_id_return = isset($_POST['order_id_return']) ? intval($_POST['order_id_return']) : 0;
@@ -44,35 +128,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_return'])) {
             } elseif ($orderToReturn['trang_thai'] != 'hoan_thanh') {
                 $error_message = 'Chỉ có thể yêu cầu đổi trả đơn hàng đã hoàn thành.';
             } else {
-                // Tạo bảng nếu chưa tồn tại
-                $conn->exec("CREATE TABLE IF NOT EXISTS don_hang_doi_tra (
-                    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                    ma_donhang BIGINT(20) NOT NULL,
-                    ma_user BIGINT(20) NOT NULL,
-                    ly_do TEXT,
-                    status ENUM('pending','approved','rejected') DEFAULT 'pending',
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NULL DEFAULT NULL,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY unique_return_order (ma_donhang),
-                    KEY idx_return_user (ma_user)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
+                // Xử lý upload bằng chứng
+                $bang_chung = '';
+                if (isset($_FILES['evidence']) && $_FILES['evidence']['error'] == 0) {
+                    $allowed_types = array('image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/mov');
+                    $max_size = 50 * 1024 * 1024; // 50MB
+                    
+                    $file_type = $_FILES['evidence']['type'];
+                    $file_size = $_FILES['evidence']['size'];
+                    
+                    if (!in_array($file_type, $allowed_types)) {
+                        $error_message = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF) hoặc video (MP4, AVI, MOV).';
+                    } elseif ($file_size > $max_size) {
+                        $error_message = 'Kích thước file không được vượt quá 50MB.';
+                    } else {
+                        // Tạo thư mục nếu chưa có
+                        $upload_dir = 'img/evidence/';
+                        if (!file_exists($upload_dir)) {
+                            mkdir($upload_dir, 0777, true);
+                        }
+                        
+                        // Tạo tên file unique
+                        $file_extension = pathinfo($_FILES['evidence']['name'], PATHINFO_EXTENSION);
+                        $new_filename = 'evidence_' . $order_id_return . '_' . time() . '.' . $file_extension;
+                        $upload_path = $upload_dir . $new_filename;
+                        
+                        if (move_uploaded_file($_FILES['evidence']['tmp_name'], $upload_path)) {
+                            $bang_chung = $upload_path;
+                        } else {
+                            $error_message = 'Lỗi khi upload file. Vui lòng thử lại.';
+                        }
+                    }
+                }
                 
-                // Kiểm tra đã tồn tại yêu cầu chưa
-                $checkReturnStmt = $conn->prepare("SELECT * FROM don_hang_doi_tra WHERE ma_donhang = ?");
-                $checkReturnStmt->execute(array($order_id_return));
-                $existingReturn = $checkReturnStmt->fetch();
-                
-                if ($existingReturn) {
-                    // Cập nhật yêu cầu hiện tại
-                    $updateReturnStmt = $conn->prepare("UPDATE don_hang_doi_tra SET ly_do = ?, status = 'pending', updated_at = NOW() WHERE ma_donhang = ?");
-                    $updateReturnStmt->execute(array($return_reason, $order_id_return));
-                    $success_message = 'Yêu cầu đổi trả đã được cập nhật thành công!';
-                } else {
-                    // Tạo yêu cầu mới
-                    $insertReturnStmt = $conn->prepare("INSERT INTO don_hang_doi_tra (ma_donhang, ma_user, ly_do, status) VALUES (?, ?, ?, 'pending')");
-                    $insertReturnStmt->execute(array($order_id_return, $user_id, $return_reason));
-                    $success_message = 'Yêu cầu đổi trả đã được gửi thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.';
+                if (empty($error_message)) {
+                    // Tạo bảng nếu chưa tồn tại
+                    $conn->exec("CREATE TABLE IF NOT EXISTS don_hang_doi_tra (
+                        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                        ma_donhang BIGINT(20) NOT NULL,
+                        ma_user BIGINT(20) NOT NULL,
+                        ly_do TEXT,
+                        bang_chung VARCHAR(250) DEFAULT NULL,
+                        status ENUM('pending','approved','rejected') DEFAULT 'pending',
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NULL DEFAULT NULL,
+                        PRIMARY KEY (id),
+                        UNIQUE KEY unique_return_order (ma_donhang),
+                        KEY idx_return_user (ma_user)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
+                    
+                    // Kiểm tra đã tồn tại yêu cầu chưa
+                    $checkReturnStmt = $conn->prepare("SELECT * FROM don_hang_doi_tra WHERE ma_donhang = ?");
+                    $checkReturnStmt->execute(array($order_id_return));
+                    $existingReturn = $checkReturnStmt->fetch();
+                    
+                    if ($existingReturn) {
+                        // Cập nhật yêu cầu hiện tại
+                        if ($bang_chung) {
+                            $updateReturnStmt = $conn->prepare("UPDATE don_hang_doi_tra SET ly_do = ?, bang_chung = ?, status = 'pending', updated_at = NOW() WHERE ma_donhang = ?");
+                            $updateReturnStmt->execute(array($return_reason, $bang_chung, $order_id_return));
+                        } else {
+                            $updateReturnStmt = $conn->prepare("UPDATE don_hang_doi_tra SET ly_do = ?, status = 'pending', updated_at = NOW() WHERE ma_donhang = ?");
+                            $updateReturnStmt->execute(array($return_reason, $order_id_return));
+                        }
+                        $success_message = 'Yêu cầu đổi trả đã được cập nhật thành công!';
+                    } else {
+                        // Tạo yêu cầu mới
+                        if ($bang_chung) {
+                            $insertReturnStmt = $conn->prepare("INSERT INTO don_hang_doi_tra (ma_donhang, ma_user, ly_do, bang_chung, status) VALUES (?, ?, ?, ?, 'pending')");
+                            $insertReturnStmt->execute(array($order_id_return, $user_id, $return_reason, $bang_chung));
+                        } else {
+                            $insertReturnStmt = $conn->prepare("INSERT INTO don_hang_doi_tra (ma_donhang, ma_user, ly_do, status) VALUES (?, ?, ?, 'pending')");
+                            $insertReturnStmt->execute(array($order_id_return, $user_id, $return_reason));
+                        }
+                        $success_message = 'Yêu cầu đổi trả đã được gửi thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.';
+                    }
                 }
             }
         } catch (PDOException $e) {
@@ -85,8 +215,21 @@ try {
     $db = new Database();
     $conn = $db->getConnection();
     
-    // Lấy danh sách đơn hàng của user
-    $sql = "SELECT * FROM don_hang WHERE ma_user = ? ORDER BY ma_donhang ASC";
+    // Phân trang
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $per_page = 10;
+    $offset = ($page - 1) * $per_page;
+    
+    // Đếm tổng số đơn hàng của user
+    $count_sql = "SELECT COUNT(*) as total FROM don_hang WHERE ma_user = ?";
+    $count_stmt = $conn->prepare($count_sql);
+    $count_stmt->execute(array($user_id));
+    $count_result = $count_stmt->fetch(PDO::FETCH_ASSOC);
+    $total = $count_result['total'];
+    $total_pages = ceil($total / $per_page);
+    
+    // Lấy danh sách đơn hàng của user với phân trang (mới nhất trước)
+    $sql = "SELECT * FROM don_hang WHERE ma_user = ? ORDER BY ma_donhang DESC LIMIT " . intval($per_page) . " OFFSET " . intval($offset);
     $stmt = $conn->prepare($sql);
     $stmt->execute(array($user_id));
     $orders = $stmt->fetchAll();
@@ -100,6 +243,23 @@ try {
         $return_requests[$row['ma_donhang']] = array(
             'status' => $row['status'],
             'ly_do' => $row['ly_do'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at']
+        );
+    }
+    
+    // Lấy danh sách yêu cầu hoàn tiền (nếu có)
+    $refund_requests = array();
+    $refundStmt = $conn->prepare("SELECT ma_donhang, trang_thai, so_tai_khoan, ten_ngan_hang, ly_do, so_tien, created_at, updated_at FROM hoan_tien WHERE ma_user = ?");
+    $refundStmt->execute(array($user_id));
+    $refundRows = $refundStmt->fetchAll();
+    foreach ($refundRows as $row) {
+        $refund_requests[$row['ma_donhang']] = array(
+            'trang_thai' => $row['trang_thai'],
+            'so_tai_khoan' => $row['so_tai_khoan'],
+            'ten_ngan_hang' => $row['ten_ngan_hang'],
+            'ly_do' => $row['ly_do'],
+            'so_tien' => $row['so_tien'],
             'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at']
         );
@@ -160,6 +320,25 @@ function translate_return_status($status) {
         case 'approved': return 'Đồng ý';
         case 'rejected': return 'Từ chối';
         default: return $status;
+    }
+}
+
+function translate_refund_status($status) {
+    switch ($status) {
+        case 'chua_hoan_tien': return 'Chưa hoàn tiền';
+        case 'da_hoan_tien': return 'Đã hoàn tiền';
+        default: return $status;
+    }
+}
+
+function get_refund_status_badge($status) {
+    switch ($status) {
+        case 'chua_hoan_tien': 
+            return '<span style="background-color: #ffc107; color: #000; padding: 5px 10px; border-radius: 3px; font-size: 12px;">Chưa hoàn tiền</span>';
+        case 'da_hoan_tien': 
+            return '<span style="background-color: #28a745; color: #fff; padding: 5px 10px; border-radius: 3px; font-size: 12px;">Đã hoàn tiền</span>';
+        default: 
+            return '';
     }
 }
 
@@ -557,7 +736,7 @@ include_once 'includes/cart_count.php';
 </head>
 <body>
     <section id="header">
-        <a href="index.php"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <a href="index.php"><img src="img/logo7.png" width="150px" class="logo" alt="KLTN Logo"></a>
         <div>
             <ul id="navbar">
                 <li><a href="index.php">Trang chủ</a></li>
@@ -715,8 +894,19 @@ include_once 'includes/cart_count.php';
                         <a href="my_orders.php?id=<?php echo $order['ma_donhang']; ?>" class="btn-view">
                             <i class="fas fa-eye"></i> Xem chi tiết
                         </a>
+                        
                         <?php 
-                        // Chỉ hiển thị nút hủy cho đơn COD chưa thanh toán và chưa bị hủy
+                        // Nút hủy đơn hàng cho các đơn đã thanh toán (VNPay/SePay) - Yêu cầu hoàn tiền
+                        if (in_array($order['trang_thai'], array('cho_xu_ly', 'xac_nhan'))
+                            && $order['trangthai_thanhtoan'] == 'da_thanh_toan'): 
+                        ?>
+                        <button type="button" class="btn-cancel" onclick="openCancelRefundModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
+                            <i class="fas fa-ban"></i> Hủy đơn & hoàn tiền
+                        </button>
+                        <?php endif; ?>
+                        
+                        <?php 
+                        // Nút hủy đơn hàng cho COD chưa thanh toán
                         if ($order['phuongthuc_thanhtoan'] == 'cod' 
                             && $order['trangthai_thanhtoan'] == 'chua_thanh_toan' 
                             && $order['trang_thai'] != 'huy'
@@ -731,30 +921,108 @@ include_once 'includes/cart_count.php';
                         <?php endif; ?>
 
                         <?php
-                        // Cho phép đổi trả với đơn hàng đã hoàn thành hoặc đã xác nhận (cả VNPay và COD)
-                        $can_return = in_array($order['trang_thai'], array('hoan_thanh', 'xac_nhan', 'da_xuat_kho'));
+                        // Hiển thị trạng thái đổi trả (nếu có yêu cầu)
                         $return_info = isset($return_requests[$order['ma_donhang']]) ? $return_requests[$order['ma_donhang']] : null;
-                        if ($can_return):
+                        
+                        if ($return_info):
+                            // Nếu có yêu cầu đổi trả, hiển thị trạng thái
                         ?>
-                            <?php if (!$return_info): ?>
-                                <button type="button" class="btn-return" onclick="openReturnModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
-                                    <i class="fas fa-undo"></i> Yêu cầu đổi trả
-                                </button>
-                            <?php else: ?>
+                            <div style="margin-top: 10px;">
                                 <span class="return-badge <?php echo $return_info['status']; ?>">
                                     <i class="fas fa-info-circle"></i>
-                                    <?php echo translate_return_status($return_info['status']); ?>
+                                    Đổi trả: <?php echo translate_return_status($return_info['status']); ?>
                                 </span>
-                                <?php if ($return_info['status'] == 'pending'): ?>
-                                    <button type="button" class="btn-return" onclick="openReturnModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
+                                <?php if ($return_info['status'] == 'pending' && $order['trang_thai'] == 'hoan_thanh'): ?>
+                                    <button type="button" class="btn-return" style="margin-top: 5px;" onclick="openReturnModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
                                         <i class="fas fa-edit"></i> Cập nhật yêu cầu
                                     </button>
                                 <?php endif; ?>
-                            <?php endif; ?>
+                            </div>
+                        <?php elseif ($order['trang_thai'] == 'hoan_thanh'): ?>
+                            <!-- Chỉ hiện nút yêu cầu đổi trả khi đơn hoàn thành và chưa có yêu cầu -->
+                            <button type="button" class="btn-return" onclick="openReturnModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
+                                <i class="fas fa-undo"></i> Yêu cầu đổi trả
+                            </button>
+                        <?php endif; ?>
+                        
+                        <?php
+                        // Hiển thị trạng thái hoàn tiền (nếu có)
+                        $refund_info = isset($refund_requests[$order['ma_donhang']]) ? $refund_requests[$order['ma_donhang']] : null;
+                        if ($refund_info):
+                        ?>
+                            <div style="margin-top: 10px;">
+                                <?php echo get_refund_status_badge($refund_info['trang_thai']); ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
+            
+            <!-- Phân trang -->
+            <?php if ($total_pages > 1): ?>
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center" style="display: flex; gap: 5px; list-style: none; padding: 0;">
+                    <!-- Nút Previous -->
+                    <?php if ($page > 1): ?>
+                        <li style="display: inline-block;">
+                            <a href="my_orders.php?page=<?php echo $page - 1; ?>" 
+                               style="display: inline-block; padding: 8px 12px; background: #088178; color: white; text-decoration: none; border-radius: 4px;">
+                                <i class="fas fa-chevron-left"></i> Trước
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    
+                    <!-- Số trang -->
+                    <?php 
+                    $start_page = max(1, $page - 2);
+                    $end_page = min($total_pages, $page + 2);
+                    
+                    if ($start_page > 1): ?>
+                        <li style="display: inline-block;">
+                            <a href="my_orders.php?page=1" 
+                               style="display: inline-block; padding: 8px 12px; background: #f0f0f0; color: #333; text-decoration: none; border-radius: 4px;">1</a>
+                        </li>
+                        <?php if ($start_page > 2): ?>
+                            <li style="display: inline-block;"><span style="padding: 8px 12px;">...</span></li>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    
+                    <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                        <li style="display: inline-block;">
+                            <a href="my_orders.php?page=<?php echo $i; ?>" 
+                               style="display: inline-block; padding: 8px 12px; background: <?php echo $i == $page ? '#088178' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : '#333'; ?>; text-decoration: none; border-radius: 4px; font-weight: <?php echo $i == $page ? 'bold' : 'normal'; ?>;">
+                                <?php echo $i; ?>
+                            </a>
+                        </li>
+                    <?php endfor; ?>
+                    
+                    <?php if ($end_page < $total_pages): ?>
+                        <?php if ($end_page < $total_pages - 1): ?>
+                            <li style="display: inline-block;"><span style="padding: 8px 12px;">...</span></li>
+                        <?php endif; ?>
+                        <li style="display: inline-block;">
+                            <a href="my_orders.php?page=<?php echo $total_pages; ?>" 
+                               style="display: inline-block; padding: 8px 12px; background: #f0f0f0; color: #333; text-decoration: none; border-radius: 4px;"><?php echo $total_pages; ?></a>
+                        </li>
+                    <?php endif; ?>
+                    
+                    <!-- Nút Next -->
+                    <?php if ($page < $total_pages): ?>
+                        <li style="display: inline-block;">
+                            <a href="my_orders.php?page=<?php echo $page + 1; ?>" 
+                               style="display: inline-block; padding: 8px 12px; background: #088178; color: white; text-decoration: none; border-radius: 4px;">
+                                Sau <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+                
+                <p class="text-center text-muted mt-3" style="text-align: center; color: #666; margin-top: 15px;">
+                    Trang <?php echo $page; ?> / <?php echo $total_pages; ?> 
+                    (Tổng <?php echo $total; ?> đơn hàng)
+                </p>
+            </nav>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -851,6 +1119,80 @@ include_once 'includes/cart_count.php';
                 </tfoot>
             </table>
             
+            <?php
+            // Hiển thị thông tin đổi trả (nếu có)
+            $return_info_detail = isset($return_requests[$selected_order['ma_donhang']]) ? $return_requests[$selected_order['ma_donhang']] : null;
+            if ($return_info_detail):
+            ?>
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ffc107;">
+                <h4 style="margin-bottom: 15px; color: #856404;">
+                    <i class="fas fa-undo"></i> Thông tin đổi trả
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div>
+                        <strong>Trạng thái:</strong><br>
+                        <span class="return-badge <?php echo $return_info_detail['status']; ?>">
+                            <?php echo translate_return_status($return_info_detail['status']); ?>
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Ngày yêu cầu:</strong><br>
+                        <?php echo date('d/m/Y H:i', strtotime($return_info_detail['created_at'])); ?>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <strong>Lý do:</strong><br>
+                        <?php echo htmlspecialchars($return_info_detail['ly_do']); ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php
+            // Hiển thị thông tin hoàn tiền (nếu có)
+            $refund_info_detail = isset($refund_requests[$selected_order['ma_donhang']]) ? $refund_requests[$selected_order['ma_donhang']] : null;
+            if ($refund_info_detail):
+            ?>
+            <div style="background: #d1ecf1; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #17a2b8;">
+                <h4 style="margin-bottom: 15px; color: #0c5460;">
+                    <i class="fas fa-money-bill-wave"></i> Thông tin hoàn tiền
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div>
+                        <strong>Trạng thái:</strong><br>
+                        <?php echo get_refund_status_badge($refund_info_detail['trang_thai']); ?>
+                    </div>
+                    <div>
+                        <strong>Số tiền hoàn:</strong><br>
+                        <span style="color: #088178; font-weight: bold; font-size: 16px;">
+                            <?php echo number_format($refund_info_detail['so_tien'], 0, ',', '.'); ?> VNĐ
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Ngân hàng:</strong><br>
+                        <?php echo htmlspecialchars($refund_info_detail['ten_ngan_hang']); ?>
+                    </div>
+                    <div>
+                        <strong>Số tài khoản:</strong><br>
+                        <?php echo htmlspecialchars($refund_info_detail['so_tai_khoan']); ?>
+                    </div>
+                    <div>
+                        <strong>Ngày yêu cầu:</strong><br>
+                        <?php echo date('d/m/Y H:i', strtotime($refund_info_detail['created_at'])); ?>
+                    </div>
+                    <?php if ($refund_info_detail['updated_at']): ?>
+                    <div>
+                        <strong>Ngày cập nhật:</strong><br>
+                        <?php echo date('d/m/Y H:i', strtotime($refund_info_detail['updated_at'])); ?>
+                    </div>
+                    <?php endif; ?>
+                    <div style="grid-column: 1 / -1;">
+                        <strong>Lý do:</strong><br>
+                        <?php echo htmlspecialchars($refund_info_detail['ly_do']); ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <div style="margin-top: 30px; text-align: center;">
                 <a href="my_orders.php" class="btn-view">
                     <i class="fas fa-arrow-left"></i> Quay lại
@@ -859,6 +1201,76 @@ include_once 'includes/cart_count.php';
         </div>
     </div>
     <?php endif; ?>
+
+    <!-- Modal hủy đơn & hoàn tiền -->
+    <div class="return-modal" id="cancelRefundModal">
+        <div class="return-modal-content">
+            <span class="close-return-modal" onclick="closeCancelRefundModal()">&times;</span>
+            <h3><i class="fas fa-ban"></i> Yêu cầu hủy đơn hàng & hoàn tiền</h3>
+            
+            <div class="return-info-box" id="cancelRefundOrderInfo">
+                <!-- Thông tin đơn hàng sẽ được điền bằng JavaScript -->
+            </div>
+            
+            <form method="POST" action="my_orders.php" id="cancelRefundForm">
+                <input type="hidden" name="order_id_cancel" id="orderIdCancel">
+                
+                <div class="return-form-group">
+                    <label for="soTaiKhoan">
+                        Số tài khoản <span style="color: red;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="so_tai_khoan" 
+                        id="soTaiKhoan" 
+                        placeholder="Nhập số tài khoản nhận tiền hoàn"
+                        required
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+                    >
+                </div>
+                
+                <div class="return-form-group">
+                    <label for="tenNganHang">
+                        Tên ngân hàng <span style="color: red;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="ten_ngan_hang" 
+                        id="tenNganHang" 
+                        placeholder="Ví dụ: Vietcombank, Techcombank, MBBank..."
+                        required
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+                    >
+                </div>
+                
+                <div class="return-form-group">
+                    <label for="lyDoHuy">
+                        Lý do hủy đơn <span style="color: red;">*</span>
+                    </label>
+                    <textarea 
+                        name="ly_do_huy" 
+                        id="lyDoHuy" 
+                        placeholder="Vui lòng mô tả lý do bạn muốn hủy đơn hàng (ví dụ: Đặt nhầm, không cần nữa, tìm được sản phẩm tốt hơn...)"
+                        required
+                    ></textarea>
+                </div>
+                
+                <div class="alert alert-info" style="background: #e7f3ff; border: 1px solid #b3d9ff; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Lưu ý:</strong> Sau khi gửi yêu cầu, đơn hàng sẽ được hủy và số tiền sẽ được hoàn lại vào tài khoản của bạn trong vòng 3-5 ngày làm việc.
+                </div>
+                
+                <div class="return-form-actions">
+                    <button type="submit" name="submit_cancel_refund" class="btn-submit-return">
+                        <i class="fas fa-paper-plane"></i> Gửi yêu cầu
+                    </button>
+                    <button type="button" class="btn-cancel-modal" onclick="closeCancelRefundModal()">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal đổi trả -->
     <div class="return-modal" id="returnModal">
@@ -870,7 +1282,7 @@ include_once 'includes/cart_count.php';
                 <!-- Thông tin đơn hàng sẽ được điền bằng JavaScript -->
             </div>
             
-            <form method="POST" action="my_orders.php" id="returnForm">
+            <form method="POST" action="my_orders.php" id="returnForm" enctype="multipart/form-data">
                 <input type="hidden" name="order_id_return" id="orderIdReturn">
                 
                 <div class="return-form-group">
@@ -883,6 +1295,23 @@ include_once 'includes/cart_count.php';
                         placeholder="Vui lòng mô tả chi tiết lý do bạn muốn đổi trả sản phẩm (ví dụ: sản phẩm bị lỗi, không đúng mô tả, giao sai hàng...)"
                         required
                     ></textarea>
+                </div>
+                
+                <div class="return-form-group">
+                    <label for="evidence">
+                        Bằng chứng (Hình ảnh hoặc Video)
+                    </label>
+                    <p style="font-size: 13px; color: #666; margin: 5px 0 10px 0;">
+                        <i class="fas fa-info-circle"></i> Upload hình ảnh hoặc video chứng minh vấn đề (tối đa 50MB)
+                    </p>
+                    <input 
+                        type="file" 
+                        name="evidence" 
+                        id="evidence" 
+                        accept="image/jpeg,image/png,image/gif,video/mp4,video/avi,video/mov"
+                        style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 100%;"
+                    >
+                    <small style="color: #888; display: block; margin-top: 5px;">Hỗ trợ: JPG, PNG, GIF, MP4, AVI, MOV</small>
                 </div>
                 
                 <div class="return-form-actions">
@@ -932,11 +1361,34 @@ include_once 'includes/cart_count.php';
             document.body.style.overflow = 'auto';
         }
         
+        function openCancelRefundModal(orderId, customerName, totalPrice) {
+            document.getElementById('cancelRefundModal').style.display = 'block';
+            document.getElementById('orderIdCancel').value = orderId;
+            document.getElementById('cancelRefundOrderInfo').innerHTML = 
+                '<p><strong>Mã đơn hàng:</strong> #' + orderId + '</p>' +
+                '<p><strong>Người nhận:</strong> ' + customerName + '</p>' +
+                '<p><strong>Số tiền hoàn:</strong> <span style="color: #088178; font-weight: bold;">' + totalPrice + ' VNĐ</span></p>';
+            document.getElementById('soTaiKhoan').value = '';
+            document.getElementById('tenNganHang').value = '';
+            document.getElementById('lyDoHuy').value = '';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeCancelRefundModal() {
+            document.getElementById('cancelRefundModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
         // Đóng modal khi click bên ngoài
         window.onclick = function(event) {
             const returnModal = document.getElementById('returnModal');
+            const cancelRefundModal = document.getElementById('cancelRefundModal');
+            
             if (event.target === returnModal) {
                 closeReturnModal();
+            }
+            if (event.target === cancelRefundModal) {
+                closeCancelRefundModal();
             }
         }
         

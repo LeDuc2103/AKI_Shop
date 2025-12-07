@@ -358,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
 </head>
 <body>
     <section id="header">
-        <a href="index.php"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <a href="index.php"><img src="img/logo7.png" width="150px" class="logo" alt="KLTN Logo"></a>
         <div>
             <ul id="navbar">
                 <li><a href="index.php">Trang chủ</a></li>

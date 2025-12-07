@@ -3,6 +3,7 @@ header('Content-Type: text/html; charset=utf-8');
 require_once 'config/database.php';
 
 try {
+    $db = new Database();
     $conn = $db->getConnection();
     echo "<h1>Thêm dữ liệu mẫu cho bảng san_pham</h1>";
     

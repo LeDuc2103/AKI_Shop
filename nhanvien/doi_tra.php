@@ -187,7 +187,8 @@ while ($row = $stmt_stats->fetch(PDO::FETCH_ASSOC)) {
                                 <th style="width: 40px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">#</th>
                                 <th style="width: 150px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Đơn hàng</th>
                                 <th style="width: 180px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Khách hàng</th>
-                                <th style="width: 280px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Lý do đổi trả</th>
+                                <th style="width: 250px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Lý do đổi trả</th>
+                                <th style="width: 150px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Bằng chứng</th>
                                 <th style="width: 110px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Trạng thái</th>
                                 <th style="width: 100px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Ngày gửi</th>
                                 <th style="width: 180px; text-align: center; vertical-align: middle; border: 1px solid #dee2e6;">Hành động</th>
@@ -232,6 +233,25 @@ while ($row = $stmt_stats->fetch(PDO::FETCH_ASSOC)) {
                                         <div style="max-height: 100px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.5; text-align: left; word-wrap: break-word;">
                                             <?php echo nl2br(htmlspecialchars($req['ly_do'])); ?>
                                         </div>
+                                    </td>
+                                    <td style="text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 12px;">
+                                        <?php if (!empty($req['bang_chung'])): ?>
+                                            <?php 
+                                            $file_extension = strtolower(pathinfo($req['bang_chung'], PATHINFO_EXTENSION));
+                                            $is_video = in_array($file_extension, array('mp4', 'avi', 'mov'));
+                                            ?>
+                                            <?php if ($is_video): ?>
+                                                <a href="<?php echo htmlspecialchars($req['bang_chung']); ?>" target="_blank" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-video"></i> Xem video
+                                                </a>
+                                            <?php else: ?>
+                                                <a href="<?php echo htmlspecialchars($req['bang_chung']); ?>" target="_blank">
+                                                    <img src="<?php echo htmlspecialchars($req['bang_chung']); ?>" alt="Bằng chứng" style="max-width: 100px; max-height: 100px; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                                                </a>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <small class="text-muted"><i class="fas fa-ban"></i> Không có</small>
+                                        <?php endif; ?>
                                     </td>
                                     <td style="text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 12px;">`
                                         <span class="badge bg-<?php echo ($req['status'] == 'approved' ? 'success' : ($req['status'] == 'rejected' ? 'danger' : 'warning text-dark')); ?> fs-6">

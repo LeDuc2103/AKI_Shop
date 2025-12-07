@@ -5,6 +5,7 @@ header('Content-Type: text/html; charset=UTF-8');
 require_once 'config/database.php';
 
 try {
+    $db = new Database();
     $conn = $db->getConnection();
     
     // Thiết lập UTF-8 cho WAMP 2.2.0c

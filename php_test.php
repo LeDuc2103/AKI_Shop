@@ -22,6 +22,7 @@ if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
 echo "<h2>Test Database Connection:</h2>";
 try {
     require_once 'config/database.php';
+    $db = new Database();
     $conn = $db->getConnection();
     echo "<p style='color: green;'>✓ Database connection successful</p>";
     

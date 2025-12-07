@@ -25,6 +25,7 @@ echo "<!DOCTYPE html>
         <h1>🔍 Kiểm tra giá trị vai_tro trong bảng user</h1>";
 
 try {
+    $db = new Database();
     $conn = $db->getConnection();
     
     $stmt = $conn->query("SELECT ma_user, ho_ten, email, vai_tro, trang_thai FROM user ORDER BY ma_user");

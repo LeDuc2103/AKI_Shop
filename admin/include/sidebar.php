@@ -17,4 +17,5 @@ if (isset($adminInfo)) {
 <a href="admin.php?action=khachhang"><i class="fas fa-user-friends me-2"></i> Khách hàng</a>
 <a href="admin.php?action=donhang"><i class="fas fa-file-invoice-dollar me-2"></i> Đơn hàng</a>
 <a href="admin.php?action=danhmuc"><i class="fas fa-list me-2"></i> Danh mục</a>
+<a href="admin.php?action=hoan_tien"><i class="fas fa-money-bill-wave me-2"></i> Hoàn tiền</a>
 <a href="logout.php" class="text-danger"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a>

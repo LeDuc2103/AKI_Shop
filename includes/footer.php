@@ -1,6 +1,6 @@
 <footer id="section-p1">
     <div class="col">
-        <img class="logo" src="img/logo1.png" width="120px" alt="">
+        <img class="logo" src="img/logo7.png" width="120px" alt="">
         <h4>Thông Tin Liên Hệ</h4>
         <p><Strong>Địa chỉ: </Strong>124 Lê Quang Định, phường Bình Thạnh, TP.HỒ CHÍ MINH, VIỆT NAM</p>
         <p><Strong>Điện thoại: </Strong>+84 123 456 789</p>

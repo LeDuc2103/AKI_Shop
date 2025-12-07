@@ -28,8 +28,8 @@ if (!$order) {
     die("Không tìm thấy đơn hàng!");
 }
 
-// Transaction content
-$transaction_content = "Thanh Toan Don Hang " . $order_code;
+// Transaction content - Format: "DH" + order_code (ví dụ: DH8976)
+$transaction_content = "DH" . $order_code;
 
 // VietQR URL
 $qr_url = "https://img.vietqr.io/image/" . SEPAY_BANK_CODE . "-" . SEPAY_ACCOUNT_NUMBER . "-compact2.png?" . 
@@ -390,7 +390,8 @@ $qr_url = "https://img.vietqr.io/image/" . SEPAY_BANK_CODE . "-" . SEPAY_ACCOUNT
             const transDiv = document.getElementById('transactions');
             listDiv.style.display = 'block';
             
-            const pattern = new RegExp('(?:Thanh\\s*Toan\\s*)?Don\\s*Hang\\s*' + ORDER_CODE, 'i');
+            // Pattern mới: "DH" + order_code (ví dụ: DH8976)
+            const pattern = new RegExp('DH\\s*' + ORDER_CODE, 'i');
             
             transDiv.innerHTML = transactions.map(trans => {
                 const isMatched = pattern.test(trans.transaction_content) && 

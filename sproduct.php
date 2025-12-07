@@ -142,7 +142,7 @@ include_once 'includes/cart_count.php';
 </head>
 <body>
     <section id="header">
-        <a href="index.php"><img src="img/logo1.png" width="150px" class="logo" alt="KLTN Logo"></a>
+        <a href="index.php"><img src="img/logo7.png" width="150px" class="logo" alt="KLTN Logo"></a>
         <div>
             <ul id="navbar">
                 <li><a href="index.php">Trang chủ</a></li>
@@ -587,8 +587,12 @@ include_once 'includes/cart_count.php';
             // Lấy màu đã chọn
             var selectedColor = colorSelect ? colorSelect.value : '';
             
-            // Không yêu cầu bắt buộc chọn màu vì bảng gio_hang chưa hỗ trợ lưu mau_sac_id
-            // Chỉ cần lấy số lượng
+            // Kiểm tra bắt buộc chọn màu sắc
+            if (!selectedColor || selectedColor === '') {
+                alert('Bạn chưa chọn màu sắc. Vui lòng chọn màu sắc!');
+                return;
+            }
+            
             var quantity = parseInt(quantityInput.value) || 1;
             
             // Gửi AJAX request
