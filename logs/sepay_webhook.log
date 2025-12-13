@@ -1,0 +1,147 @@
+[2025-12-09 15:21:16] === WEBHOOK RECEIVED ===
+[2025-12-09 15:21:16] IP: ::1
+[2025-12-09 15:21:16] Time: 2025-12-09 15:21:16
+[2025-12-09 15:21:16] ❌ UNAUTHORIZED - Invalid API Key: 
+[2025-12-13 12:21:10] Webhook received from IP: ::1
+[2025-12-13 12:21:10] Authorization header: 
+[2025-12-13 12:21:10] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 12:27:51] Webhook received from IP: ::1
+[2025-12-13 12:27:51] Authorization header: 
+[2025-12-13 12:27:51] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 12:38:46] Webhook received from IP: ::1
+[2025-12-13 12:38:46] Authorization header: 
+[2025-12-13 12:38:46] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 12:38:46] === PROCESSING WEBHOOK ===
+[2025-12-13 12:38:46] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 12:38:46] ✓ Transaction saved to tb_transactions (ID: 1)
+[2025-12-13 12:38:46] Transaction content: Thanh toan don hang DH0087
+[2025-12-13 12:38:46] Extracted order ID: 0087
+[2025-12-13 12:38:46] Updating order DH0087 to 'da_thanh_toan'
+[2025-12-13 12:38:46] SUCCESS - Payment confirmed for order DH0087
+[2025-12-13 12:40:45] Webhook received from IP: ::1
+[2025-12-13 12:40:45] Authorization header: 
+[2025-12-13 12:40:45] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 12:40:45] === PROCESSING WEBHOOK ===
+[2025-12-13 12:40:45] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 12:40:45] ✓ Transaction saved to tb_transactions (ID: 2)
+[2025-12-13 12:40:45] Transaction content: Thanh toan don hang DH0087
+[2025-12-13 12:40:45] Extracted order ID: 0087
+[2025-12-13 12:40:45] ERROR - Order not found: DH0087 with amount: 16800
+[2025-12-13 12:41:47] Webhook received from IP: ::1
+[2025-12-13 12:41:47] Authorization header: 
+[2025-12-13 12:41:47] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 12:41:47] === PROCESSING WEBHOOK ===
+[2025-12-13 12:41:47] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 12:41:47] ✓ Transaction saved to tb_transactions (ID: 3)
+[2025-12-13 12:41:47] Transaction content: Thanh toan don hang DH0087
+[2025-12-13 12:41:47] Extracted order ID: 0087
+[2025-12-13 12:41:47] ERROR - Order not found: DH0087 with amount: 16800
+[2025-12-13 12:41:52] Webhook received from IP: ::1
+[2025-12-13 12:41:52] Authorization header: 
+[2025-12-13 12:41:52] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 12:41:52] === PROCESSING WEBHOOK ===
+[2025-12-13 12:41:52] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 12:41:52] ✓ Transaction saved to tb_transactions (ID: 4)
+[2025-12-13 12:41:52] Transaction content: Thanh toan don hang DH0087
+[2025-12-13 12:41:52] Extracted order ID: 0087
+[2025-12-13 12:41:52] ERROR - Order not found: DH0087 with amount: 16800
+[2025-12-13 13:00:12] Webhook received from IP: ::1
+[2025-12-13 13:00:12] Authorization header: 
+[2025-12-13 13:00:12] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 13:00:12] === PROCESSING WEBHOOK ===
+[2025-12-13 13:00:12] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 13:00:12] ✓ Transaction saved to tb_transactions (ID: 5)
+[2025-12-13 13:00:12] Transaction content: Thanh toan don hang DH0090
+[2025-12-13 13:00:12] Extracted order ID: 0090
+[2025-12-13 13:00:12] Updating order DH0090 to 'da_thanh_toan'
+[2025-12-13 13:00:13] SUCCESS - Payment confirmed for order DH0090
+[2025-12-13 13:55:49] Webhook received from IP: ::1
+[2025-12-13 13:55:49] Authorization header: 
+[2025-12-13 13:55:49] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 13:55:50] === PROCESSING WEBHOOK ===
+[2025-12-13 13:55:50] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 13:55:50] ✓ Transaction saved to tb_transactions (ID: 6)
+[2025-12-13 13:55:50] Transaction content: Thanh toan don hang DH0092
+[2025-12-13 13:55:50] Extracted order ID: 0092
+[2025-12-13 13:55:50] Updating order DH0092 to 'da_thanh_toan'
+[2025-12-13 13:55:50] SUCCESS - Payment confirmed for order DH0092
+[2025-12-13 14:03:29] Webhook received from IP: ::1
+[2025-12-13 14:03:29] Authorization header: 
+[2025-12-13 14:03:29] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:03:29] === PROCESSING WEBHOOK ===
+[2025-12-13 14:03:29] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 14:03:29] ✓ Transaction saved to tb_transactions (ID: 7)
+[2025-12-13 14:03:29] Transaction content: Thanh toan don hang DH0093
+[2025-12-13 14:03:29] Extracted order ID: 0093
+[2025-12-13 14:03:29] Updating order DH0093 to 'da_thanh_toan'
+[2025-12-13 14:03:29] SUCCESS - Payment confirmed for order DH0093
+[2025-12-13 14:03:57] Webhook received from IP: ::1
+[2025-12-13 14:03:57] Authorization header: 
+[2025-12-13 14:03:57] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:03:57] === PROCESSING WEBHOOK ===
+[2025-12-13 14:03:57] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 14:03:57] ✓ Transaction saved to tb_transactions (ID: 8)
+[2025-12-13 14:03:57] Transaction content: Thanh toan don hang DH0094
+[2025-12-13 14:03:57] Extracted order ID: 0094
+[2025-12-13 14:03:57] Updating order DH0094 to 'da_thanh_toan'
+[2025-12-13 14:03:57] SUCCESS - Payment confirmed for order DH0094
+[2025-12-13 14:14:32] Webhook received from IP: ::1
+[2025-12-13 14:14:32] Authorization header: 
+[2025-12-13 14:14:32] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:14:32] === PROCESSING WEBHOOK ===
+[2025-12-13 14:14:32] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 14:14:32] ✓ Transaction saved to tb_transactions (ID: 9)
+[2025-12-13 14:14:32] Transaction content: Thanh toan don hang DH0096
+[2025-12-13 14:14:32] Extracted order ID: 0096
+[2025-12-13 14:14:32] Updating order DH0096 to 'da_thanh_toan'
+[2025-12-13 14:14:32] SUCCESS - Payment confirmed for order DH0096
+[2025-12-13 14:42:42] Webhook received from IP: ::1
+[2025-12-13 14:42:42] Authorization header: Apikey 7O2MCQT0UISAX1BNW3KGZFHKESPOJOC4HRUE1MEBXDBABIELFARZWUL68FNYV2MD
+[2025-12-13 14:42:42] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:42:42] === PROCESSING WEBHOOK ===
+[2025-12-13 14:42:42] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 14:42:42] ✓ Transaction saved to tb_transactions (ID: 10)
+[2025-12-13 14:42:42] Transaction content: 110769432473-DH0101-CHUYEN TIEN-OQCH0004jpJa-MOMO110769432473MOMO
+[2025-12-13 14:42:42] Extracted order ID: 0101
+[2025-12-13 14:42:42] Updating order DH0101 to 'da_thanh_toan'
+[2025-12-13 14:42:43] SUCCESS - Payment confirmed for order DH0101
+[2025-12-13 14:44:27] Webhook received from IP: ::1
+[2025-12-13 14:44:27] Authorization header: Apikey 7O2MCQT0UISAX1BNW3KGZFHKESPOJOC4HRUE1MEBXDBABIELFARZWUL68FNYV2MD
+[2025-12-13 14:44:27] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:44:27] === PROCESSING WEBHOOK ===
+[2025-12-13 14:44:27] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 14:44:27] ✓ Transaction saved to tb_transactions (ID: 11)
+[2025-12-13 14:44:27] Transaction content: 110768814460-DH0100-CHUYEN TIEN-OQCH0004joDc-MOMO110768814460MOMO
+[2025-12-13 14:44:27] Extracted order ID: 0100
+[2025-12-13 14:44:27] Updating order DH0100 to 'da_thanh_toan'
+[2025-12-13 14:44:27] SUCCESS - Payment confirmed for order DH0100
+[2025-12-13 14:45:31] Webhook received from IP: ::1
+[2025-12-13 14:45:31] Authorization header: Apikey 7O2MCQT0UISAX1BNW3KGZFHKESPOJOC4HRUE1MEBXDBABIELFARZWUL68FNYV2MD
+[2025-12-13 14:45:31] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:45:31] === PROCESSING WEBHOOK ===
+[2025-12-13 14:45:31] Gateway: MBBank | Amount: 16800 | Type: in
+[2025-12-13 14:45:31] ✓ Transaction saved to tb_transactions (ID: 12)
+[2025-12-13 14:45:31] Transaction content: 110768169661-DH0099-CHUYEN TIEN-OQCH0004jnPx-MOMO110768169661MOMO
+[2025-12-13 14:45:31] Extracted order ID: 0099
+[2025-12-13 14:45:31] Updating order DH0099 to 'da_thanh_toan'
+[2025-12-13 14:45:31] SUCCESS - Payment confirmed for order DH0099
+[2025-12-13 14:49:25] Webhook received from IP: ::1
+[2025-12-13 14:49:25] Authorization header: Apikey 7O2MCQT0UISAX1BNW3KGZFHKESPOJOC4HRUE1MEBXDBABIELFARZWUL68FNYV2MD
+[2025-12-13 14:49:25] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:49:25] === PROCESSING WEBHOOK ===
+[2025-12-13 14:49:25] Gateway: MBBank | Amount: 16200 | Type: in
+[2025-12-13 14:49:25] ✓ Transaction saved to tb_transactions (ID: 13)
+[2025-12-13 14:49:25] Transaction content: 110770039369 0981523130 DH0102   Ma giao dich  Trace783586 Trace 78358
+[2025-12-13 14:49:25] Extracted order ID: 0102
+[2025-12-13 14:49:25] Updating order DH0102 to 'da_thanh_toan'
+[2025-12-13 14:49:25] SUCCESS - Payment confirmed for order DH0102
+[2025-12-13 14:59:23] Webhook received from IP: ::1
+[2025-12-13 14:59:23] Authorization header: Apikey 7O2MCQT0UISAX1BNW3KGZFHKESPOJOC4HRUE1MEBXDBABIELFARZWUL68FNYV2MD
+[2025-12-13 14:59:23] LOCAL REQUEST - Skipping API Key verification
+[2025-12-13 14:59:23] === PROCESSING WEBHOOK ===
+[2025-12-13 14:59:23] Gateway: MBBank | Amount: 15600 | Type: in
+[2025-12-13 14:59:23] ✓ Transaction saved to tb_transactions (ID: 14)
+[2025-12-13 14:59:23] Transaction content: DH0103   Ma giao dich  Trace962534 Trace 962534
+[2025-12-13 14:59:23] Extracted order ID: 0103
+[2025-12-13 14:59:23] Updating order DH0103 to 'da_thanh_toan'
+[2025-12-13 14:59:23] SUCCESS - Payment confirmed for order DH0103

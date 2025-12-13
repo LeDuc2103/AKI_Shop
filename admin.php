@@ -31,6 +31,7 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
     <title>Trang Quản Trị</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636815">
     <style>
         body { background-color: #f8f9fa; }
         .sidebar { min-height: 100vh; background-color: #343a40; }
@@ -62,6 +63,8 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
                 include('admin/donhang.php');
             } elseif ($action == 'danhmuc') {
                 include('admin/danhmuc.php');
+            } elseif ($action == 'khuyenmai') {
+                include('admin/khuyenmai.php');
             } elseif ($action == 'hoan_tien') {
                 include('admin/hoan_tien.php');
             } else {
@@ -75,5 +78,6 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/mobile-responsive.js?v=1765636815"></script>
 </body>
 </html>

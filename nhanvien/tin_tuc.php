@@ -334,46 +334,54 @@ if ($action == 'add' || $action == 'edit') {
             image_title: true,
             automatic_uploads: true,
             file_picker_types: 'image',
-            images_upload_handler: function (blobInfo, success, failure) {
-                var xhr, formData;
-                
-                console.log('Bắt đầu upload ảnh:', blobInfo.filename());
-                
-                xhr = new XMLHttpRequest();
-                xhr.withCredentials = false;
-                xhr.open('POST', 'nhanvien/upload_image.php');
-                
-                xhr.onload = function() {
-                    console.log('Upload hoàn tất. Status:', xhr.status);
-                    console.log('Response:', xhr.responseText);
+            images_upload_handler: function (blobInfo, progress) {
+                return new Promise(function(resolve, reject) {
+                    var xhr, formData;
                     
-                    var json;
-                    if (xhr.status != 200) {
-                        failure('Lỗi upload: ' + xhr.status);
-                        return;
-                    }
-                    try {
-                        json = JSON.parse(xhr.responseText);
-                        if (!json || typeof json.location != 'string') {
-                            failure('Phản hồi không hợp lệ: ' + xhr.responseText);
+                    console.log('Bắt đầu upload ảnh:', blobInfo.filename());
+                    
+                    xhr = new XMLHttpRequest();
+                    xhr.withCredentials = false;
+                    xhr.open('POST', '../nhanvien/upload_image.php');
+                    
+                    xhr.upload.onprogress = function (e) {
+                        progress(e.loaded / e.total * 100);
+                    };
+                    
+                    xhr.onload = function() {
+                        console.log('Upload hoàn tất. Status:', xhr.status);
+                        console.log('Response:', xhr.responseText);
+                        
+                        if (xhr.status != 200) {
+                            console.error('HTTP Error:', xhr.status);
+                            reject('Lỗi HTTP: ' + xhr.status);
                             return;
                         }
-                        console.log('Upload thành công:', json.location);
-                        success(json.location);
-                    } catch (e) {
-                        console.error('Lỗi parse JSON:', e);
-                        failure('Lỗi xử lý phản hồi: ' + e.message);
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    console.error('Lỗi kết nối');
-                    failure('Lỗi kết nối đến server');
-                };
-                
-                formData = new FormData();
-                formData.append('file', blobInfo.blob(), blobInfo.filename());
-                xhr.send(formData);
+                        
+                        try {
+                            var json = JSON.parse(xhr.responseText);
+                            if (!json || typeof json.location != 'string') {
+                                console.error('Invalid JSON response:', xhr.responseText);
+                                reject('Phản hồi không hợp lệ: ' + xhr.responseText);
+                                return;
+                            }
+                            console.log('Upload thành công:', json.location);
+                            resolve(json.location);
+                        } catch (e) {
+                            console.error('Lỗi parse JSON:', e);
+                            reject('Lỗi xử lý phản hồi: ' + e.message);
+                        }
+                    };
+                    
+                    xhr.onerror = function() {
+                        console.error('Lỗi kết nối');
+                        reject('Lỗi kết nối đến server');
+                    };
+                    
+                    formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+                    xhr.send(formData);
+                });
             }
         });
     </script>

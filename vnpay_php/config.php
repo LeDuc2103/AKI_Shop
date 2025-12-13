@@ -38,6 +38,6 @@ $vnp_Returnurl = $baseUrl . "/vnpay_return.php";
 
 $vnp_apiUrl = "http://sandbox.vnpayment.vn/merchant_webapi/merchant.html";
 //Config input format
-//Expire
+//Expire - Tăng lên 30 phút để khách hàng có thời gian thanh toán
 $startTime = date("YmdHis");
-$expire = date('YmdHis',strtotime('+15 minutes',strtotime($startTime)));
+$expire = date('YmdHis',strtotime('+30 minutes',strtotime($startTime)));

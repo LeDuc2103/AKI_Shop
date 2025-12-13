@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title>Đăng Ký - KLTN Shop</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636815">
 </head>
 <body>
     <section id="header">
@@ -171,5 +172,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include 'includes/footer.php'; ?>
 
     <script src="script.js"></script>
+    <script src="js/mobile-responsive.js?v=1765636815"></script>
 </body>
 </html>

@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cancel_refund'
                     so_tien DECIMAL(15,2) NOT NULL DEFAULT 0,
                     trang_thai ENUM('pending','approved','rejected') DEFAULT 'pending',
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NULL DEFAULT NULL,
+                    updated_at DATETIME NULL DEFAULT NULL,
                     PRIMARY KEY (id),
                     KEY idx_ma_donhang (ma_donhang),
                     KEY idx_ma_user (ma_user)
@@ -211,58 +211,170 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_return'])) {
     }
 }
 
+// Xử lý yêu cầu hoàn tiền (không hủy đơn - chỉ hoàn tiền)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_refund_request'])) {
+    $order_id_refund = isset($_POST['order_id_refund']) ? intval($_POST['order_id_refund']) : 0;
+    $so_tai_khoan = isset($_POST['so_tai_khoan_refund']) ? trim($_POST['so_tai_khoan_refund']) : '';
+    $ten_ngan_hang = isset($_POST['ten_ngan_hang_refund']) ? trim($_POST['ten_ngan_hang_refund']) : '';
+    $ly_do = isset($_POST['ly_do_refund']) ? trim($_POST['ly_do_refund']) : '';
+    
+    if ($order_id_refund <= 0) {
+        $error_message = 'Đơn hàng không hợp lệ.';
+    } elseif (empty($so_tai_khoan)) {
+        $error_message = 'Vui lòng nhập số tài khoản.';
+    } elseif (empty($ten_ngan_hang)) {
+        $error_message = 'Vui lòng nhập tên ngân hàng.';
+    } elseif (empty($ly_do)) {
+        $error_message = 'Vui lòng nhập lý do hoàn tiền.';
+    } else {
+        try {
+            $db = new Database();
+            $conn = $db->getConnection();
+            
+            // Kiểm tra đơn hàng
+            $checkStmt = $conn->prepare("SELECT * FROM don_hang WHERE ma_donhang = ? AND ma_user = ?");
+            $checkStmt->execute(array($order_id_refund, $user_id));
+            $orderRefund = $checkStmt->fetch();
+            
+            if (!$orderRefund) {
+                $error_message = 'Không tìm thấy đơn hàng.';
+            } elseif ($orderRefund['trang_thai'] != 'hoan_thanh') {
+                $error_message = 'Chỉ có thể yêu cầu hoàn tiền với đơn hàng đã hoàn thành.';
+            } elseif ($orderRefund['trangthai_thanhtoan'] != 'da_thanh_toan') {
+                $error_message = 'Chỉ có thể yêu cầu hoàn tiền với đơn hàng đã thanh toán.';
+            } else {
+                // Tạo bảng hoan_tien nếu chưa có
+                $conn->exec("CREATE TABLE IF NOT EXISTS hoan_tien (
+                    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                    ma_donhang BIGINT(20) NOT NULL,
+                    ma_user BIGINT(20) NOT NULL,
+                    so_tai_khoan VARCHAR(50) NOT NULL,
+                    ten_ngan_hang VARCHAR(100) NOT NULL,
+                    ly_do TEXT,
+                    so_tien DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    trang_thai ENUM('chua_hoan_tien','da_hoan_tien','tu_choi') DEFAULT 'chua_hoan_tien',
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NULL DEFAULT NULL,
+                    PRIMARY KEY (id),
+                    KEY idx_ma_donhang (ma_donhang),
+                    KEY idx_ma_user (ma_user)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
+                
+                // Kiểm tra đã có yêu cầu hoàn tiền chưa
+                $checkRefund = $conn->prepare("SELECT * FROM hoan_tien WHERE ma_donhang = ?");
+                $checkRefund->execute(array($order_id_refund));
+                $existingRefund = $checkRefund->fetch();
+                
+                if ($existingRefund) {
+                    $error_message = 'Đơn hàng này đã có yêu cầu hoàn tiền trước đó.';
+                } else {
+                    // Lưu yêu cầu hoàn tiền
+                    $insertRefund = $conn->prepare("INSERT INTO hoan_tien (ma_donhang, ma_user, so_tai_khoan, ten_ngan_hang, ly_do, so_tien, trang_thai) VALUES (?, ?, ?, ?, ?, ?, 'chua_hoan_tien')");
+                    $insertRefund->execute(array($order_id_refund, $user_id, $so_tai_khoan, $ten_ngan_hang, $ly_do, $orderRefund['tong_tien']));
+                    
+                    $success_message = 'Yêu cầu hoàn tiền đã được gửi thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.';
+                }
+            }
+        } catch (PDOException $e) {
+            $error_message = 'Lỗi khi gửi yêu cầu hoàn tiền: ' . $e->getMessage();
+        }
+    }
+}
+
 try {
     $db = new Database();
     $conn = $db->getConnection();
+    
+    // Xác định view hiện tại (đơn hàng hoặc đơn hàng đổi trả)
+    $current_view = isset($_GET['view']) ? $_GET['view'] : 'orders';
     
     // Phân trang
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $per_page = 10;
     $offset = ($page - 1) * $per_page;
     
-    // Đếm tổng số đơn hàng của user
-    $count_sql = "SELECT COUNT(*) as total FROM don_hang WHERE ma_user = ?";
-    $count_stmt = $conn->prepare($count_sql);
-    $count_stmt->execute(array($user_id));
-    $count_result = $count_stmt->fetch(PDO::FETCH_ASSOC);
-    $total = $count_result['total'];
-    $total_pages = ceil($total / $per_page);
-    
-    // Lấy danh sách đơn hàng của user với phân trang (mới nhất trước)
-    $sql = "SELECT * FROM don_hang WHERE ma_user = ? ORDER BY ma_donhang DESC LIMIT " . intval($per_page) . " OFFSET " . intval($offset);
-    $stmt = $conn->prepare($sql);
-    $stmt->execute(array($user_id));
-    $orders = $stmt->fetchAll();
-
-    // Lấy danh sách yêu cầu đổi trả (nếu có)
-    $return_requests = array();
-    $returnStmt = $conn->prepare("SELECT ma_donhang, status, ly_do, created_at, updated_at FROM don_hang_doi_tra WHERE ma_user = ?");
-    $returnStmt->execute(array($user_id));
-    $returnRows = $returnStmt->fetchAll();
-    foreach ($returnRows as $row) {
-        $return_requests[$row['ma_donhang']] = array(
-            'status' => $row['status'],
-            'ly_do' => $row['ly_do'],
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at']
-        );
-    }
-    
-    // Lấy danh sách yêu cầu hoàn tiền (nếu có)
-    $refund_requests = array();
-    $refundStmt = $conn->prepare("SELECT ma_donhang, trang_thai, so_tai_khoan, ten_ngan_hang, ly_do, so_tien, created_at, updated_at FROM hoan_tien WHERE ma_user = ?");
-    $refundStmt->execute(array($user_id));
-    $refundRows = $refundStmt->fetchAll();
-    foreach ($refundRows as $row) {
-        $refund_requests[$row['ma_donhang']] = array(
-            'trang_thai' => $row['trang_thai'],
-            'so_tai_khoan' => $row['so_tai_khoan'],
-            'ten_ngan_hang' => $row['ten_ngan_hang'],
-            'ly_do' => $row['ly_do'],
-            'so_tien' => $row['so_tien'],
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at']
-        );
+    if ($current_view == 'returns') {
+        // VIEW: Đơn hàng đổi trả
+        // Đếm tổng số đơn hàng đổi trả của user
+        $count_sql = "SELECT COUNT(*) as total 
+                      FROM don_hang dh 
+                      INNER JOIN don_hang_doi_tra ddt ON dh.ma_donhang = ddt.ma_donhang 
+                      WHERE dh.ma_user = ?";
+        $count_stmt = $conn->prepare($count_sql);
+        $count_stmt->execute(array($user_id));
+        $count_result = $count_stmt->fetch(PDO::FETCH_ASSOC);
+        $total = $count_result['total'];
+        $total_pages = ceil($total / $per_page);
+        
+        // Lấy danh sách đơn hàng đổi trả với phân trang
+        $sql = "SELECT dh.*, 
+                       ddt.status as return_status, 
+                       ddt.ly_do as return_reason, 
+                       ddt.bang_chung as return_evidence,
+                       ddt.trang_thai_kho as warehouse_status,
+                       ddt.created_at as return_created_at,
+                       ddt.updated_at as return_updated_at
+                FROM don_hang dh 
+                INNER JOIN don_hang_doi_tra ddt ON dh.ma_donhang = ddt.ma_donhang 
+                WHERE dh.ma_user = ? 
+                ORDER BY ddt.created_at DESC 
+                LIMIT " . intval($per_page) . " OFFSET " . intval($offset);
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(array($user_id));
+        $return_orders = $stmt->fetchAll();
+        
+        $orders = array(); // Không dùng ở view này
+        $return_requests = array();
+        $refund_requests = array();
+        
+    } else {
+        // VIEW: Đơn hàng thông thường
+        // Đếm tổng số đơn hàng của user
+        $count_sql = "SELECT COUNT(*) as total FROM don_hang WHERE ma_user = ?";
+        $count_stmt = $conn->prepare($count_sql);
+        $count_stmt->execute(array($user_id));
+        $count_result = $count_stmt->fetch(PDO::FETCH_ASSOC);
+        $total = $count_result['total'];
+        $total_pages = ceil($total / $per_page);
+        
+        // Lấy danh sách đơn hàng của user với phân trang (mới nhất trước)
+        $sql = "SELECT * FROM don_hang WHERE ma_user = ? ORDER BY ma_donhang DESC LIMIT " . intval($per_page) . " OFFSET " . intval($offset);
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(array($user_id));
+        $orders = $stmt->fetchAll();
+        
+        $return_orders = array(); // Không dùng ở view này
+        
+        // Lấy danh sách yêu cầu đổi trả (nếu có)
+        $return_requests = array();
+        $returnStmt = $conn->prepare("SELECT ma_donhang, status, ly_do, created_at, updated_at FROM don_hang_doi_tra WHERE ma_user = ?");
+        $returnStmt->execute(array($user_id));
+        $returnRows = $returnStmt->fetchAll();
+        foreach ($returnRows as $row) {
+            $return_requests[$row['ma_donhang']] = array(
+                'status' => $row['status'],
+                'ly_do' => $row['ly_do'],
+                'created_at' => $row['created_at'],
+                'updated_at' => $row['updated_at']
+            );
+        }
+        
+        // Lấy danh sách yêu cầu hoàn tiền (nếu có)
+        $refund_requests = array();
+        $refundStmt = $conn->prepare("SELECT ma_donhang, trang_thai, so_tai_khoan, ten_ngan_hang, ly_do, so_tien, created_at, updated_at FROM hoan_tien WHERE ma_user = ?");
+        $refundStmt->execute(array($user_id));
+        $refundRows = $refundStmt->fetchAll();
+        foreach ($refundRows as $row) {
+            $refund_requests[$row['ma_donhang']] = array(
+                'trang_thai' => $row['trang_thai'],
+                'so_tai_khoan' => $row['so_tai_khoan'],
+                'ten_ngan_hang' => $row['ten_ngan_hang'],
+                'ly_do' => $row['ly_do'],
+                'so_tien' => $row['so_tien'],
+                'created_at' => $row['created_at'],
+                'updated_at' => $row['updated_at']
+            );
+        }
     }
     
     // Nếu có yêu cầu xem chi tiết đơn hàng
@@ -285,7 +397,17 @@ try {
                          WHERE ct.ma_donhang = ?";
             $detailStmt = $conn->prepare($detailSql);
             $detailStmt->execute(array($order_id));
-            $order_details = $detailStmt->fetchAll();
+            $order_details = $detailStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Debug: Kiểm tra xem có dữ liệu không
+            if (empty($order_details)) {
+                error_log("No order details found for order_id: " . $order_id);
+                // Thử query trực tiếp bảng chitiet_donhang
+                $debugStmt = $conn->prepare("SELECT * FROM chitiet_donhang WHERE ma_donhang = ?");
+                $debugStmt->execute(array($order_id));
+                $debugData = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
+                error_log("Debug chitiet_donhang: " . print_r($debugData, true));
+            }
         }
     }
     
@@ -352,200 +474,546 @@ include_once 'includes/cart_count.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title>Lịch sử đơn hàng - KLTN Shop</title>
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>
+    <link rel="stylesheet" href="css/responsive.css?v=1765636813">">
     <style>
         .orders-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
+        }
+        
+        /* Tab Navigation Styles */
+        .order-tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 35px;
+            border-bottom: 3px solid #e8e8e8;
+            padding-bottom: 0;
+        }
+        
+        .tab-button {
+            padding: 15px 35px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: -3px;
+            position: relative;
+        }
+        
+        .tab-button i {
+            font-size: 18px;
+        }
+        
+        .tab-button:hover {
+            color: #088178;
+            background: rgba(8, 129, 120, 0.05);
+        }
+        
+        .tab-button.active {
+            color: #088178;
+            border-bottom-color: #088178;
+            font-weight: 700;
+            background: rgba(8, 129, 120, 0.08);
         }
         
         .order-card {
             background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
         }
         
         .order-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(8, 129, 120, 0.15);
+            border-color: #088178;
         }
         
         .order-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f5f5f5;
         }
         
         .order-id {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 700;
             color: #088178;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .order-id i {
+            font-size: 22px;
         }
         
         .order-date {
             color: #666;
             font-size: 14px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .order-date i {
+            color: #088178;
         }
         
         .order-status {
             display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .status-cho_xu_ly {
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
             color: #856404;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
         }
         
         .status-xac_nhan {
-            background: #d1ecf1;
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
             color: #0c5460;
+            box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
         }
         
         .status-da_xuat_kho {
-            background: #d4edda;
-            color: #155724;
+            background: linear-gradient(135deg, #cfe2ff 0%, #b6d4fe 100%);
+            color: #084298;
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
         }
         
         .status-hoan_thanh {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
         }
         
         .status-huy {
-            background: #f8d7da;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
             color: #721c24;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
         }
         
         .order-info {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 10px;
         }
         
         .info-item {
             display: flex;
             flex-direction: column;
+            gap: 6px;
         }
         
         .info-label {
             font-size: 12px;
-            color: #999;
-            margin-bottom: 5px;
+            color: #888;
+            margin-bottom: 2px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .info-value {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 600;
             color: #333;
+        }
+        
+        .info-value i {
+            margin-right: 5px;
+            color: #088178;
+        }
+        
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            background: linear-gradient(135deg, #f0f9f8 0%, #e0f2f1 100%);
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #088178;
+        }
+        
+        .order-total span:first-child {
+            font-size: 15px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .total-amount {
+            font-size: 22px;
+            font-weight: 700;
+            color: #088178;
         }
         
         .order-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
         
         .btn-view {
-            padding: 8px 20px;
-            background: #088178;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
             text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: background 0.3s;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-view::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-view:hover::before {
+            left: 100%;
         }
         
         .btn-view:hover {
-            background: #066d63;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+        
+        .btn-view:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-view i {
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+        
+        .btn-view:hover i {
+            transform: scale(1.2);
+        }
+        
+        /* Nút xem chi tiết cho đơn hàng đổi trả */
+        .btn-view-detail {
+            padding: 13px 32px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+            border: none;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-view-detail::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn-view-detail:hover::before {
+            left: 100%;
+        }
+        
+        .btn-view-detail::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-view-detail:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-view-detail:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.6);
+        }
+        
+        .btn-view-detail:active {
+            transform: translateY(-1px) scale(1);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+        
+        .btn-view-detail i {
+            font-size: 17px;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-view-detail:hover i {
+            transform: scale(1.3) rotate(5deg);
+        }
+        
+        .btn-view-detail span {
+            position: relative;
+            z-index: 1;
         }
         
         .btn-cancel {
-            padding: 8px 20px;
-            background: #dc3545;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
         
         .btn-cancel:hover {
-            background: #c82333;
+            background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-return {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-return:hover {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+        
+        .btn-refund {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #088178 0%, #066d64 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(8, 129, 120, 0.3);
+            margin-left: 10px;
+        }
+
+        .btn-refund:hover {
+            background: linear-gradient(135deg, #066d64 0%, #055751 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(8, 129, 120, 0.4);
         }
         
         .error-alert {
-            background: #f8d7da;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
             color: #721c24;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #f5c6cb;
+            padding: 18px 22px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid #dc3545;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
         .success-alert {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #c3e6cb;
+            padding: 18px 22px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
         .error-alert i,
         .success-alert i {
-            margin-right: 8px;
-        }
-
-        .btn-return {
-            padding: 8px 20px;
-            background: #f39c12;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .btn-return:hover {
-            background: #d68910;
+            font-size: 20px;
         }
 
         .return-badge {
             display: inline-block;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 6px 14px;
+            margin: 5px 5px 5px 0;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
             vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .return-badge.pending {
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
             color: #856404;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
         }
         
         .return-badge.approved {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
         }
         
         .return-badge.rejected {
-            background: #f8d7da;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
             color: #721c24;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+        
+        /* Warehouse Status Badges */
+        .warehouse-status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin: 5px 5px 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .warehouse-status-badge.cho_nhap_kho {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            color: #856404;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+        }
+        
+        .warehouse-status-badge.da_nhap_kho {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            color: #0c5460;
+            box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+        }
+        
+        .return-info-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #088178;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .return-info-section h4 {
+            margin: 0 0 15px 0;
+            color: #088178;
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .return-info-section h4 i {
+            font-size: 20px;
+        }
+        
+        .return-info-section p {
+            margin: 12px 0;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .return-info-section strong {
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .return-info-section a {
+            color: #088178;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .return-info-section a:hover {
+            color: #066d63;
+            text-decoration: underline;
         }
         
         /* Modal đổi trả */
@@ -556,45 +1024,73 @@ include_once 'includes/cart_count.php';
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             z-index: 2000;
             overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
         .return-modal-content {
             background: white;
             max-width: 600px;
             margin: 50px auto;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 35px;
+            border-radius: 15px;
             position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         
         .return-modal h3 {
             color: #088178;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .return-form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         .return-form-group label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+            margin-bottom: 10px;
+            font-weight: 600;
             color: #333;
+            font-size: 15px;
         }
         
-        .return-form-group textarea {
+        .return-form-group textarea,
+        .return-form-group input[type="text"] {
             width: 100%;
             min-height: 120px;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             resize: vertical;
             font-size: 14px;
             font-family: Arial, sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .return-form-group textarea:focus,
+        .return-form-group input[type="text"]:focus {
+            border-color: #088178;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(8, 129, 120, 0.1);
         }
         
         .return-form-actions {
@@ -618,43 +1114,56 @@ include_once 'includes/cart_count.php';
         }
         
         .btn-cancel-modal {
-            padding: 10px 20px;
-            background: #ccc;
+            padding: 12px 30px;
+            background: #f5f5f5;
             color: #333;
-            border: none;
-            border-radius: 6px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
         }
         
         .btn-cancel-modal:hover {
-            background: #999;
+            background: #e8e8e8;
+            border-color: #bbb;
         }
         
         .close-return-modal {
             position: absolute;
-            top: 15px;
+            top: 20px;
             right: 20px;
             font-size: 28px;
-            font-weight: bold;
-            color: #999;
             cursor: pointer;
+            color: #999;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
             line-height: 1;
         }
         
         .close-return-modal:hover {
             color: #333;
+            background: #f0f0f0;
+            transform: rotate(90deg);
         }
         
         .return-info-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 18px;
+            border-radius: 10px;
             margin-bottom: 20px;
+            border-left: 4px solid #088178;
         }
         
         .return-info-box p {
-            margin: 5px 0;
+            margin: 8px 0;
+            line-height: 1.6;
         }
         
         .order-detail-modal {
@@ -664,73 +1173,162 @@ include_once 'includes/cart_count.php';
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             z-index: 1000;
             overflow-y: auto;
+            animation: fadeIn 0.3s ease;
         }
         
         .order-detail-content {
             background: white;
             max-width: 900px;
             margin: 50px auto;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 40px;
+            border-radius: 15px;
             position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
         }
         
         .close-modal {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 30px;
+            top: 20px;
+            right: 20px;
+            font-size: 32px;
             cursor: pointer;
             color: #999;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
         }
         
         .close-modal:hover {
             color: #333;
+            background: #f0f0f0;
+            transform: rotate(90deg);
         }
         
         .detail-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
         }
         
         .detail-table th,
         .detail-table td {
-            padding: 12px;
+            padding: 15px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
         }
         
         .detail-table th {
+            background: linear-gradient(135deg, #088178 0%, #066d63 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-table tbody tr:hover {
             background: #f8f9fa;
-            font-weight: bold;
         }
         
         .detail-table img {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             object-fit: cover;
-            border-radius: 5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .empty-orders {
             text-align: center;
             padding: 80px 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
         }
         
         .empty-orders i {
             font-size: 80px;
-            color: #ddd;
-            margin-bottom: 20px;
+            color: #d0d0d0;
+            margin-bottom: 25px;
         }
         
         .empty-orders p {
             font-size: 18px;
-            color: #999;
+            color: #666;
             margin-bottom: 30px;
+            font-weight: 500;
+        }
+        
+        .continue-shopping-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 35px;
+            background: linear-gradient(135deg, #088178 0%, #066d63 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(8, 129, 120, 0.3);
+        }
+        
+        .continue-shopping-btn:hover {
+            background: linear-gradient(135deg, #066d63 0%, #055550 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(8, 129, 120, 0.4);
+        }
+        
+        /* Pagination Styles */
+        .pagination {
+            margin-top: 40px;
+        }
+        
+        .pagination a {
+            transition: all 0.3s;
+        }
+        
+        .pagination a:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .order-tabs {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .tab-button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .order-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .order-actions {
+                flex-direction: column;
+            }
+            
+            .order-actions button,
+            .order-actions a {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -786,11 +1384,21 @@ include_once 'includes/cart_count.php';
     </section>
 
     <section id="page-header" class="about-header">
-        <h2>#donhang</h2>
-        <p>Lịch sử đơn hàng của bạn</p>
+        <h2>Lịch sử đơn hàng của bạn</h2>
     </section>
 
     <div class="orders-container section-p1">
+        
+        <!-- Tab Navigation -->
+        <div class="order-tabs">
+            <a href="my_orders.php?view=orders" class="tab-button <?php echo ($current_view == 'orders') ? 'active' : ''; ?>">
+                <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+            <a href="my_orders.php?view=returns" class="tab-button <?php echo ($current_view == 'returns') ? 'active' : ''; ?>">
+                <i class="fas fa-exchange-alt"></i> Đơn hàng đổi trả
+            </a>
+        </div>
+        
         <?php if (!empty($error_message)): ?>
             <div class="error-alert">
                 <i class="fas fa-exclamation-circle"></i>
@@ -819,15 +1427,17 @@ include_once 'includes/cart_count.php';
             </div>
         <?php endif; ?>
 
-        <?php if (empty($orders)): ?>
-            <div class="empty-orders">
-                <i class="fa-solid fa-box-open"></i>
-                <p>Bạn chưa có đơn hàng nào</p>
-                <a href="shop.php" class="continue-shopping-btn">
-                    <i class="fa-solid fa-arrow-left"></i> Tiếp tục mua sắm
-                </a>
-            </div>
-        <?php else: ?>
+        <?php if ($current_view == 'orders'): ?>
+            <!-- VIEW: Đơn hàng thông thường -->
+            <?php if (empty($orders)): ?>
+                <div class="empty-orders">
+                    <i class="fa-solid fa-box-open"></i>
+                    <p>Bạn chưa có đơn hàng nào</p>
+                    <a href="shop.php" class="continue-shopping-btn">
+                        <i class="fa-solid fa-arrow-left"></i> Tiếp tục mua sắm
+                    </a>
+                </div>
+            <?php else: ?>
             <?php foreach ($orders as $order): ?>
                 <div class="order-card">
                     <div class="order-header">
@@ -941,8 +1551,15 @@ include_once 'includes/cart_count.php';
                         <?php elseif ($order['trang_thai'] == 'hoan_thanh'): ?>
                             <!-- Chỉ hiện nút yêu cầu đổi trả khi đơn hoàn thành và chưa có yêu cầu -->
                             <button type="button" class="btn-return" onclick="openReturnModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
-                                <i class="fas fa-undo"></i> Yêu cầu đổi trả
+                                <i class="fas fa-undo"></i> Yêu cầu đổi trả hàng
                             </button>
+                            
+                            <!-- Nút Hoàn tiền - chỉ hiện khi đơn hàng hoàn thành và đã thanh toán -->
+                            <?php if ($order['trangthai_thanhtoan'] == 'da_thanh_toan' && !isset($refund_requests[$order['ma_donhang']])): ?>
+                            <button type="button" class="btn-refund" onclick="openRefundModal(<?php echo $order['ma_donhang']; ?>, '<?php echo htmlspecialchars($order['ten_nguoinhan'], ENT_QUOTES); ?>', '<?php echo number_format($order['tong_tien'], 0, ',', '.'); ?>')">
+                                <i class="fas fa-money-bill-wave"></i> Hoàn tiền
+                            </button>
+                            <?php endif; ?>
                         <?php endif; ?>
                         
                         <?php
@@ -1024,6 +1641,187 @@ include_once 'includes/cart_count.php';
             </nav>
             <?php endif; ?>
         <?php endif; ?>
+        
+        <?php elseif ($current_view == 'returns'): ?>
+            <!-- VIEW: Đơn hàng đổi trả -->
+            <?php if (empty($return_orders)): ?>
+                <div class="empty-orders">
+                    <i class="fa-solid fa-exchange-alt"></i>
+                    <p>Bạn chưa có yêu cầu đổi trả nào</p>
+                    <a href="my_orders.php?view=orders" class="continue-shopping-btn">
+                        <i class="fa-solid fa-arrow-left"></i> Xem đơn hàng
+                    </a>
+                </div>
+            <?php else: ?>
+                <?php foreach ($return_orders as $order): ?>
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-id">
+                                    <i class="fas fa-receipt"></i> Đơn hàng #<?php echo $order['ma_donhang']; ?>
+                                </div>
+                                <div class="order-date">
+                                    <i class="far fa-calendar"></i> 
+                                    Đặt ngày: <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?>
+                                </div>
+                                <div class="order-date">
+                                    <i class="fas fa-undo"></i> 
+                                    Yêu cầu đổi trả: <?php echo date('d/m/Y H:i', strtotime($order['return_created_at'])); ?>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="order-status status-<?php echo $order['trang_thai']; ?>">
+                                    <?php echo translate_status($order['trang_thai']); ?>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Thông tin đổi trả -->
+                        <div class="return-info-section">
+                            <h4><i class="fas fa-exchange-alt"></i> Thông tin đổi trả</h4>
+                            <p>
+                                <strong>Trạng thái yêu cầu:</strong> 
+                                <span class="return-badge <?php echo $order['return_status']; ?>">
+                                    <?php echo translate_return_status($order['return_status']); ?>
+                                </span>
+                            </p>
+                            
+                            <?php if ($order['warehouse_status']): ?>
+                            <p>
+                                <strong>Trạng thái kho:</strong> 
+                                <span class="warehouse-status-badge <?php echo $order['warehouse_status']; ?>">
+                                    <?php 
+                                    echo ($order['warehouse_status'] == 'cho_nhap_kho') ? 'Chờ nhập kho' : 
+                                         (($order['warehouse_status'] == 'da_nhap_kho') ? 'Đã nhập kho' : 'N/A');
+                                    ?>
+                                </span>
+                            </p>
+                            <?php endif; ?>
+                            
+                            <p>
+                                <strong>Lý do đổi trả:</strong><br>
+                                <?php echo htmlspecialchars($order['return_reason']); ?>
+                            </p>
+                            
+                            <?php if ($order['return_evidence']): ?>
+                            <p>
+                                <strong>Bằng chứng:</strong><br>
+                                <a href="<?php echo htmlspecialchars($order['return_evidence']); ?>" 
+                                   target="_blank" 
+                                   style="color: #088178; text-decoration: underline;">
+                                    <i class="fas fa-external-link-alt"></i> Xem bằng chứng
+                                </a>
+                            </p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="order-info">
+                            <div class="info-item">
+                                <span class="info-label">Người nhận</span>
+                                <span class="info-value"><?php echo htmlspecialchars($order['ten_nguoinhan']); ?></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Số điện thoại</span>
+                                <span class="info-value"><?php echo htmlspecialchars($order['sdt_nguoinhan']); ?></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Địa chỉ</span>
+                                <span class="info-value"><?php echo htmlspecialchars($order['diachi_nhan']); ?></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Phương thức thanh toán</span>
+                                <span class="info-value">
+                                    <?php 
+                                    if ($order['phuongthuc_thanhtoan'] == 'vnpay') {
+                                        echo '<i class="fas fa-credit-card"></i> VNPay';
+                                    } else {
+                                        echo '<i class="fas fa-money-bill-wave"></i> ' . htmlspecialchars($order['phuongthuc_thanhtoan']);
+                                    }
+                                    ?>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="order-total">
+                            <span>Tổng tiền đơn hàng:</span>
+                            <span class="total-amount"><?php echo number_format($order['tong_tien'], 0, ',', '.'); ?> VNĐ</span>
+                        </div>
+                        
+                        <div class="order-actions">
+                            <a href="my_orders.php?id=<?php echo $order['ma_donhang']; ?>" class="btn-view-detail">
+                                <i class="fas fa-eye"></i> Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+                
+                <!-- Phân trang cho đơn hàng đổi trả -->
+                <?php if ($total_pages > 1): ?>
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center" style="display: flex; gap: 5px; list-style: none; padding: 0;">
+                        <!-- Nút Previous -->
+                        <?php if ($page > 1): ?>
+                            <li style="display: inline-block;">
+                                <a href="my_orders.php?view=returns&page=<?php echo $page - 1; ?>" 
+                                   style="display: inline-block; padding: 8px 12px; background: #088178; color: white; text-decoration: none; border-radius: 4px;">
+                                    <i class="fas fa-chevron-left"></i> Trước
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <!-- Số trang -->
+                        <?php 
+                        $start_page = max(1, $page - 2);
+                        $end_page = min($total_pages, $page + 2);
+                        
+                        if ($start_page > 1): ?>
+                            <li style="display: inline-block;">
+                                <a href="my_orders.php?view=returns&page=1" 
+                                   style="display: inline-block; padding: 8px 12px; background: #f0f0f0; color: #333; text-decoration: none; border-radius: 4px;">1</a>
+                            </li>
+                            <?php if ($start_page > 2): ?>
+                                <li style="display: inline-block;"><span style="padding: 8px 12px;">...</span></li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        
+                        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                            <li style="display: inline-block;">
+                                <a href="my_orders.php?view=returns&page=<?php echo $i; ?>" 
+                                   style="display: inline-block; padding: 8px 12px; background: <?php echo $i == $page ? '#088178' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : '#333'; ?>; text-decoration: none; border-radius: 4px; font-weight: <?php echo $i == $page ? 'bold' : 'normal'; ?>;">
+                                    <?php echo $i; ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($end_page < $total_pages): ?>
+                            <?php if ($end_page < $total_pages - 1): ?>
+                                <li style="display: inline-block;"><span style="padding: 8px 12px;">...</span></li>
+                            <?php endif; ?>
+                            <li style="display: inline-block;">
+                                <a href="my_orders.php?view=returns&page=<?php echo $total_pages; ?>" 
+                                   style="display: inline-block; padding: 8px 12px; background: #f0f0f0; color: #333; text-decoration: none; border-radius: 4px;"><?php echo $total_pages; ?></a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <!-- Nút Next -->
+                        <?php if ($page < $total_pages): ?>
+                            <li style="display: inline-block;">
+                                <a href="my_orders.php?view=returns&page=<?php echo $page + 1; ?>" 
+                                   style="display: inline-block; padding: 8px 12px; background: #088178; color: white; text-decoration: none; border-radius: 4px;">
+                                    Sau <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                    
+                    <p class="text-center text-muted mt-3" style="text-align: center; color: #666; margin-top: 15px;">
+                        Trang <?php echo $page; ?> / <?php echo $total_pages; ?> 
+                        (Tổng <?php echo $total; ?> yêu cầu đổi trả)
+                    </p>
+                </nav>
+                <?php endif; ?>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
 
     <!-- Modal chi tiết đơn hàng -->
@@ -1076,9 +1874,10 @@ include_once 'includes/cart_count.php';
                 <tbody>
                     <?php 
                     $total = 0;
-                    foreach ($order_details as $index => $detail): 
-                        $subtotal = $detail['so_luong'] * $detail['don_gia'];
-                        $total += $subtotal;
+                    if (!empty($order_details)):
+                        foreach ($order_details as $index => $detail): 
+                            $subtotal = $detail['so_luong'] * $detail['don_gia'];
+                            $total += $subtotal;
                     ?>
                     <tr>
                         <td>
@@ -1092,7 +1891,18 @@ include_once 'includes/cart_count.php';
                             <?php echo number_format($subtotal, 0, ',', '.'); ?> VNĐ
                         </td>
                     </tr>
-                    <?php endforeach; ?>
+                    <?php 
+                        endforeach;
+                    else:
+                    ?>
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 30px; color: #999;">
+                            <i class="fas fa-box-open" style="font-size: 48px; margin-bottom: 10px;"></i><br>
+                            Không tìm thấy thông tin sản phẩm cho đơn hàng này.<br>
+                            <small>Có thể đơn hàng được tạo trước khi hệ thống lưu chi tiết sản phẩm.</small>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
                 </tbody>
                 <tfoot>
                     <tr>
@@ -1326,6 +2136,76 @@ include_once 'includes/cart_count.php';
         </div>
     </div>
 
+    <!-- Modal Hoàn tiền -->
+    <div class="return-modal" id="refundModal">
+        <div class="return-modal-content">
+            <span class="close-return-modal" onclick="closeRefundModal()">&times;</span>
+            <h3><i class="fas fa-money-bill-wave"></i> Yêu cầu hoàn tiền</h3>
+            
+            <div class="return-info-box" id="refundOrderInfo">
+                <!-- Thông tin đơn hàng sẽ được điền bằng JavaScript -->
+            </div>
+            
+            <form method="POST" action="my_orders.php" id="refundForm">
+                <input type="hidden" name="order_id_refund" id="orderIdRefund">
+                
+                <div class="return-form-group">
+                    <label for="soTaiKhoanRefund">
+                        Số tài khoản <span style="color: red;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="so_tai_khoan_refund" 
+                        id="soTaiKhoanRefund" 
+                        placeholder="Nhập số tài khoản nhận tiền hoàn"
+                        required
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+                    >
+                </div>
+                
+                <div class="return-form-group">
+                    <label for="tenNganHangRefund">
+                        Tên ngân hàng <span style="color: red;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="ten_ngan_hang_refund" 
+                        id="tenNganHangRefund" 
+                        placeholder="Ví dụ: Vietcombank, Techcombank, MBBank..."
+                        required
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"
+                    >
+                </div>
+                
+                <div class="return-form-group">
+                    <label for="lyDoRefund">
+                        Lý do hoàn tiền <span style="color: red;">*</span>
+                    </label>
+                    <textarea 
+                        name="ly_do_refund" 
+                        id="lyDoRefund" 
+                        placeholder="Vui lòng mô tả lý do bạn muốn hoàn tiền (ví dụ: Sản phẩm có vấn đề, không hài lòng với chất lượng...)"
+                        required
+                    ></textarea>
+                </div>
+                
+                <div class="alert alert-info" style="background: #e7f3ff; border: 1px solid #b3d9ff; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Lưu ý:</strong> Sau khi gửi yêu cầu, chúng tôi sẽ xem xét và hoàn tiền vào tài khoản của bạn trong vòng 3-5 ngày làm việc nếu được chấp nhận.
+                </div>
+                
+                <div class="return-form-actions">
+                    <button type="submit" name="submit_refund_request" class="btn-submit-return">
+                        <i class="fas fa-paper-plane"></i> Gửi yêu cầu
+                    </button>
+                    <button type="button" class="btn-cancel-modal" onclick="closeRefundModal()">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <?php include 'includes/footer.php'; ?>
 
     <!-- Search Box -->
@@ -1379,16 +2259,38 @@ include_once 'includes/cart_count.php';
             document.body.style.overflow = 'auto';
         }
         
+        function openRefundModal(orderId, customerName, totalPrice) {
+            document.getElementById('refundModal').style.display = 'block';
+            document.getElementById('orderIdRefund').value = orderId;
+            document.getElementById('refundOrderInfo').innerHTML = 
+                '<p><strong>Mã đơn hàng:</strong> #' + orderId + '</p>' +
+                '<p><strong>Người nhận:</strong> ' + customerName + '</p>' +
+                '<p><strong>Số tiền hoàn:</strong> <span style="color: #088178; font-weight: bold;">' + totalPrice + ' VNĐ</span></p>';
+            document.getElementById('soTaiKhoanRefund').value = '';
+            document.getElementById('tenNganHangRefund').value = '';
+            document.getElementById('lyDoRefund').value = '';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeRefundModal() {
+            document.getElementById('refundModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
         // Đóng modal khi click bên ngoài
         window.onclick = function(event) {
             const returnModal = document.getElementById('returnModal');
             const cancelRefundModal = document.getElementById('cancelRefundModal');
+            const refundModal = document.getElementById('refundModal');
             
             if (event.target === returnModal) {
                 closeReturnModal();
             }
             if (event.target === cancelRefundModal) {
                 closeCancelRefundModal();
+            }
+            if (event.target === refundModal) {
+                closeRefundModal();
             }
         }
         
@@ -1412,5 +2314,6 @@ include_once 'includes/cart_count.php';
     
     <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
     <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636813"></script>
 </body>
 </html>

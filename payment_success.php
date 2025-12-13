@@ -3,7 +3,7 @@ session_start();
 require_once 'config/database.php';
 
 // Lấy order_id từ URL
-$order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
+$order_id = isset($_GET['ma_donhang']) ? (int)$_GET['ma_donhang'] : 0;
 
 if ($order_id <= 0) {
     header('Location: index.php');
@@ -55,6 +55,7 @@ $is_paid = ($order['trangthai_thanhtoan'] === 'da_thanh_toan');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $is_paid ? 'Thanh toán thành công' : 'Xác nhận đơn hàng'; ?> - Đơn hàng #<?php echo $order_id; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636815">
     <style>
         * {
             margin: 0;
@@ -327,7 +328,7 @@ $is_paid = ($order['trangthai_thanhtoan'] === 'da_thanh_toan');
     <div class="success-container">
         <?php if ($is_paid): ?>
             <div class="success-icon">✅</div>
-            <h1 class="success-title">THANH TOÁN THÀNH CÔNG!</h1>
+            <h1 class="success-title">THỰC HIỆN THANH TOÁN!</h1>
             <p class="success-message">
                 Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đã được xác nhận và đang được xử lý.
             </p>
@@ -426,5 +427,6 @@ $is_paid = ($order['trangthai_thanhtoan'] === 'da_thanh_toan');
         }, 5000);
     </script>
     <?php endif; ?>
+    <script src="js/mobile-responsive.js?v=1765636815"></script>
 </body>
 </html>

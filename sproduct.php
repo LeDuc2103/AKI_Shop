@@ -137,8 +137,10 @@ include_once 'includes/cart_count.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <title><?php echo htmlspecialchars($product['ten_sanpham']); ?> - KLTN Shop</title>
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>
+    <link rel="stylesheet" href="css/responsive.css?v=1765636811">">
 </head>
 <body>
     <section id="header">
@@ -203,18 +205,34 @@ include_once 'includes/cart_count.php';
             <img src="<?php echo htmlspecialchars(!empty($product['hinh_anh']) ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" width="100%" id="MainImg" alt="<?php echo htmlspecialchars($product['ten_sanpham']); ?>">
             
             <div class="small-img-group">
+                <?php
+                // Tạo mảng chứa tất cả ảnh (ảnh chính + ảnh phụ)
+                $all_images = array();
+                
+                // Thêm ảnh chính
+                if (!empty($product['hinh_anh'])) {
+                    $all_images[] = $product['hinh_anh'];
+                }
+                
+                // Thêm các ảnh phụ
+                if (!empty($product['anh_con'])) {
+                    $anh_con_array = explode('|', $product['anh_con']);
+                    foreach ($anh_con_array as $anh_con_item) {
+                        $trimmed = trim($anh_con_item);
+                        if (!empty($trimmed)) {
+                            $all_images[] = $trimmed;
+                        }
+                    }
+                }
+                
+                // Hiển thị 4 ảnh đầu tiên trong small-img-group
+                for ($i = 0; $i < 4; $i++):
+                    $img_src = isset($all_images[$i]) ? $all_images[$i] : (!empty($product['hinh_anh']) ? $product['hinh_anh'] : 'img/products/f1.jpg');
+                ?>
                 <div class="small-img-col">
-                    <img src="<?php echo htmlspecialchars(!empty($product['hinh_anh']) ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" width="100%" class="small-img" alt="">
+                    <img src="<?php echo htmlspecialchars($img_src); ?>" width="100%" class="small-img" alt="">
                 </div>
-                <div class="small-img-col">
-                    <img src="<?php echo htmlspecialchars(!empty($product['hinh_anh']) ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" width="100%" class="small-img" alt="">
-                </div>
-                <div class="small-img-col">
-                    <img src="<?php echo htmlspecialchars(!empty($product['hinh_anh']) ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" width="100%" class="small-img" alt="">
-                </div>
-                <div class="small-img-col">
-                    <img src="<?php echo htmlspecialchars(!empty($product['hinh_anh']) ? $product['hinh_anh'] : 'img/products/f1.jpg'); ?>" width="100%" class="small-img" alt="">
-                </div>
+                <?php endfor; ?>
             </div>
         </div>
         
@@ -283,7 +301,7 @@ include_once 'includes/cart_count.php';
             <?php endif; ?>
             <div class="product-description">
                 <h4>Mô tả</h4>
-                <div class="description-content"><?php echo nl2br(htmlspecialchars(isset($product['mo_ta']) ? $product['mo_ta'] : 'Chưa có mô tả cho sản phẩm này.')); ?></div>
+                <div class="description-content"><?php echo isset($product['mo_ta']) && !empty($product['mo_ta']) ? $product['mo_ta'] : 'Chưa có mô tả cho sản phẩm này.'; ?></div>
             </div>
             
             <div class="quantity-section">
@@ -316,110 +334,359 @@ include_once 'includes/cart_count.php';
         </div>
     </section>
 
+    <!-- Product Tabs Section (Thông số & Đánh giá) -->
+    <section id="product-tabs-section" class="section-p1">
+        <div class="container">
+            <div class="tabs-wrapper">
+                <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs" type="button" role="tab" aria-controls="specs" aria-selected="true">
+                            <i class="fa-solid fa-list-check"></i> Thông số sản phẩm
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
+                            <i class="fa-solid fa-star"></i> Đánh giá (<?php echo $total_reviews; ?>)
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="productTabsContent">
+                    <!-- Tab Thông số sản phẩm -->
+                    <div class="tab-pane fade show active" id="specs" role="tabpanel" aria-labelledby="specs-tab">
+                        <div class="specs-content">
+                            <?php if (!empty($product['ct_sp'])): ?>
+                                <?php echo $product['ct_sp']; ?>
+                            <?php else: ?>
+                                <div class="alert alert-info">
+                                    <i class="fa-solid fa-info-circle"></i> Thông số sản phẩm đang được cập nhật.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Đánh giá -->
+                    <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        <div class="reviews-content">
+
     <!-- Reviews Section -->
-    <section id="reviews-section" class="section-p1">
-        <div class="reviews-container">
-            <h2>Đánh giá sản phẩm</h2>
+    <div class="reviews-container">
+        <h2>Đánh giá sản phẩm</h2>
+        
+        <?php if (isset($_SESSION['review_success'])): ?>
+            <div class="success-message">
+                <i class="fa-solid fa-check-circle"></i> <?php echo $_SESSION['review_success']; unset($_SESSION['review_success']); ?>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Review Form -->
+        <div class="review-form-container">
+            <h3>Viết đánh giá của bạn</h3>
+            <?php if (isset($_SESSION['user_id'])): ?>
+            <form method="POST" action="" class="review-form">
+                
+                <div class="form-group">
+                    <label>Đánh giá <span class="required">*</span></label>
+                    <div class="star-rating">
+                        <input type="radio" id="star5" name="rating" value="5" required>
+                        <label for="star5"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star4" name="rating" value="4">
+                        <label for="star4"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star3" name="rating" value="3">
+                        <label for="star3"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star2" name="rating" value="2">
+                        <label for="star2"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star1" name="rating" value="1">
+                        <label for="star1"><i class="fa-solid fa-star"></i></label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="review_text">Nội dung đánh giá <span class="required">*</span></label>
+                    <textarea id="review_text" name="review_text" rows="5" required placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."></textarea>
+                </div>
+                
+                <button type="submit" name="submit_review" class="submit-review-btn">
+                    <i class="fa-solid fa-paper-plane"></i> Gửi đánh giá
+                </button>
+            </form>
+            <?php else: ?>
+            <div class="alert alert-warning">
+                <i class="fa-solid fa-info-circle"></i> 
+                Vui lòng <a href="login.php" style="color: #856404; font-weight: bold;">đăng nhập</a> để đánh giá sản phẩm.
+            </div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- Display Reviews -->
+        <div class="reviews-list">
+            <h3>Đánh giá từ khách hàng (<?php echo $total_reviews; ?>)</h3>
             
-            <?php if (isset($_SESSION['review_success'])): ?>
-                <div class="success-message">
-                    <i class="fa-solid fa-check-circle"></i> <?php echo $_SESSION['review_success']; unset($_SESSION['review_success']); ?>
+            <?php if ($total_reviews > 0): ?>
+                <div class="rating-summary">
+                    <span class="avg-rating">⭐ <?php echo $average_rating; ?>/5</span>
+                    <span class="total-reviews">(<?php echo $total_reviews; ?> đánh giá)</span>
                 </div>
             <?php endif; ?>
-            
-            <!-- Review Form -->
-            <div class="review-form-container">
-                <h3>Viết đánh giá của bạn</h3>
-                <?php if (isset($_SESSION['user_id'])): ?>
-                <form method="POST" action="" class="review-form">
-                    
-                    <div class="form-group">
-                        <label>Đánh giá <span class="required">*</span></label>
-                        <div class="star-rating">
-                            <input type="radio" id="star5" name="rating" value="5" required>
-                            <label for="star5"><i class="fa-solid fa-star"></i></label>
-                            <input type="radio" id="star4" name="rating" value="4">
-                            <label for="star4"><i class="fa-solid fa-star"></i></label>
-                            <input type="radio" id="star3" name="rating" value="3">
-                            <label for="star3"><i class="fa-solid fa-star"></i></label>
-                            <input type="radio" id="star2" name="rating" value="2">
-                            <label for="star2"><i class="fa-solid fa-star"></i></label>
-                            <input type="radio" id="star1" name="rating" value="1">
-                            <label for="star1"><i class="fa-solid fa-star"></i></label>
+            <?php if (count($reviews) > 0): ?>
+                <?php foreach ($reviews as $review): ?>
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <i class="fa-solid fa-user-circle"></i>
+                            <strong><?php echo htmlspecialchars($review['ten_nguoi_danh_gia']); ?></strong>
+                        </div>
+                        <div class="review-rating">
+                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                <i class="fa-solid fa-star <?php echo $i <= $review['so_sao'] ? 'filled' : ''; ?>"></i>
+                            <?php endfor; ?>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="review_text">Nội dung đánh giá <span class="required">*</span></label>
-                        <textarea id="review_text" name="review_text" rows="5" required placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."></textarea>
+                    <div class="review-body">
+                        <p><?php echo nl2br(htmlspecialchars($review['noi_dung'])); ?></p>
                     </div>
                     
-                    <button type="submit" name="submit_review" class="submit-review-btn">
-                        <i class="fa-solid fa-paper-plane"></i> Gửi đánh giá
-                    </button>
-                </form>
-                <?php else: ?>
-                <div class="alert alert-warning">
-                    <i class="fa-solid fa-info-circle"></i> 
-                    Vui lòng <a href="login.php" style="color: #856404; font-weight: bold;">đăng nhập</a> để đánh giá sản phẩm.
+                    <?php if (!empty($review['phan_hoi'])): ?>
+                    <div class="staff-reply">
+                        <div class="reply-header">
+                            <i class="fa-solid fa-headset"></i>
+                            <strong><?php echo htmlspecialchars($review['nguoi_phan_hoi'] ? $review['nguoi_phan_hoi'] : 'Nhân viên AKI-Store'); ?></strong>
+                        </div>
+                        <div class="reply-body">
+                            <p><?php echo nl2br(htmlspecialchars($review['phan_hoi'])); ?></p>
+                        </div>
+                        <div class="reply-footer">
+                            <span class="reply-date"><i class="fa-regular fa-clock"></i> <?php echo date('d/m/Y H:i', strtotime($review['ngay_phan_hoi'])); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="review-footer">
+                        <span class="review-date"><i class="fa-regular fa-clock"></i> <?php echo $review['ngay_formatted']; ?></span>
+                    </div>
                 </div>
-                <?php endif; ?>
-            </div>
-            
-            <!-- Display Reviews -->
-            <div class="reviews-list">
-                <h3>Đánh giá từ khách hàng (<?php echo $total_reviews; ?>)</h3>
-                
-                <?php if ($total_reviews > 0): ?>
-                    <div class="rating-summary">
-                        <span class="avg-rating">⭐ <?php echo $average_rating; ?>/5</span>
-                        <span class="total-reviews">(<?php echo $total_reviews; ?> đánh giá)</span>
-                    </div>
-                <?php endif; ?>
-                <?php if (count($reviews) > 0): ?>
-                    <?php foreach ($reviews as $review): ?>
-                    <div class="review-item">
-                        <div class="review-header">
-                            <div class="reviewer-info">
-                                <i class="fa-solid fa-user-circle"></i>
-                                <strong><?php echo htmlspecialchars($review['ten_nguoi_danh_gia']); ?></strong>
-                            </div>
-                            <div class="review-rating">
-                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                    <i class="fa-solid fa-star <?php echo $i <= $review['so_sao'] ? 'filled' : ''; ?>"></i>
-                                <?php endfor; ?>
-                            </div>
-                        </div>
-                        <div class="review-body">
-                            <p><?php echo nl2br(htmlspecialchars($review['noi_dung'])); ?></p>
-                        </div>
-                        
-                        <?php if (!empty($review['phan_hoi'])): ?>
-                        <div class="staff-reply">
-                            <div class="reply-header">
-                                <i class="fa-solid fa-headset"></i>
-                                <strong><?php echo htmlspecialchars($review['nguoi_phan_hoi'] ? $review['nguoi_phan_hoi'] : 'Nhân viên AKI-Store'); ?></strong>
-                            </div>
-                            <div class="reply-body">
-                                <p><?php echo nl2br(htmlspecialchars($review['phan_hoi'])); ?></p>
-                            </div>
-                            <div class="reply-footer">
-                                <span class="reply-date"><i class="fa-regular fa-clock"></i> <?php echo date('d/m/Y H:i', strtotime($review['ngay_phan_hoi'])); ?></span>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        
-                        <div class="review-footer">
-                            <span class="review-date"><i class="fa-regular fa-clock"></i> <?php echo $review['ngay_formatted']; ?></span>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p class="no-reviews">Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!</p>
+            <?php endif; ?>
+        </div>
+    </div>
                         </div>
                     </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="no-reviews">Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!</p>
-                <?php endif; ?>
+                </div>
             </div>
         </div>
     </section>
+
+    <style>
+        .tabs-wrapper {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid #088178;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs .nav-link {
+            color: #666;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 24px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: #088178;
+            border-color: transparent;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #088178;
+            background: transparent;
+            border-color: transparent transparent #088178 transparent;
+        }
+        
+        .tab-content {
+            padding: 20px 0;
+        }
+        
+        .specs-content {
+            line-height: 1.8;
+        }
+        
+        .specs-content table {
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        .specs-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 15px 0;
+        }
+        
+        .specs-content iframe {
+            max-width: 100%;
+        }
+
+        /* Lightbox Styles */
+        .image-lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .image-lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.3s;
+        }
+
+        .lightbox-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            max-height: 90vh;
+            border-radius: 8px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 40px;
+            color: white;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 300;
+            line-height: 1;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-close:hover {
+            color: #088178;
+            transform: rotate(90deg);
+        }
+
+        /* Navigation buttons */
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            font-size: 30px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox-nav:hover {
+            background-color: rgba(8, 129, 120, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .lightbox-prev {
+            left: 20px;
+        }
+
+        .lightbox-next {
+            right: 20px;
+        }
+
+        /* Image counter */
+        .lightbox-counter {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 16px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes zoomIn {
+            from { 
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Make images clickable */
+        #MainImg {
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        #MainImg:hover {
+            transform: scale(1.02);
+        }
+
+        .small-img {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .small-img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+
+    <!-- Reviews Section (Moved inside tab) -->
+    <section id="reviews-section" class="section-p1" style="display:none;">
+        <!-- This section is now moved to tabs -->
+    </section>
+
+    <!-- Image Lightbox -->
+    <div class="image-lightbox" id="imageLightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+            <button class="lightbox-nav lightbox-prev" onclick="previousImage()">&#10094;</button>
+            <button class="lightbox-nav lightbox-next" onclick="nextImage()">&#10095;</button>
+            <img id="lightboxImage" src="" alt="Phóng to ảnh">
+            <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+        </div>
+    </div>
 
     <!-- Related Products Section -->
     <section id="product1" class="section-p1">
@@ -476,16 +743,115 @@ include_once 'includes/cart_count.php';
         </div>
     </section>
 
-    <?php include 'includes/footer.php'; ?>
+    <?php require('includes/footer.php'); ?>
 
     <script>
+        // Lightbox Functions
+        let currentImageIndex = 0;
+        let allProductImages = [];
+
+        // Initialize product images array
+        document.addEventListener('DOMContentLoaded', function() {
+            // Collect all images (main + sub images)
+            <?php
+            echo "allProductImages = [";
+            $img_array = array();
+            if (!empty($product['hinh_anh'])) {
+                $img_array[] = "'" . addslashes($product['hinh_anh']) . "'";
+            }
+            if (!empty($product['anh_con'])) {
+                $anh_con_array = explode('|', $product['anh_con']);
+                foreach ($anh_con_array as $anh_con_item) {
+                    $trimmed = trim($anh_con_item);
+                    if (!empty($trimmed)) {
+                        $img_array[] = "'" . addslashes($trimmed) . "'";
+                    }
+                }
+            }
+            echo implode(', ', $img_array);
+            echo "];";
+            ?>
+        });
+
+        function openLightbox(imageSrc) {
+            const lightbox = document.getElementById('imageLightbox');
+            const lightboxImage = document.getElementById('lightboxImage');
+            
+            // Find index of clicked image
+            currentImageIndex = allProductImages.indexOf(imageSrc);
+            if (currentImageIndex === -1) currentImageIndex = 0;
+            
+            lightboxImage.src = imageSrc;
+            updateCounter();
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('imageLightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function nextImage() {
+            currentImageIndex = (currentImageIndex + 1) % allProductImages.length;
+            const lightboxImage = document.getElementById('lightboxImage');
+            lightboxImage.src = allProductImages[currentImageIndex];
+            updateCounter();
+        }
+
+        function previousImage() {
+            currentImageIndex = (currentImageIndex - 1 + allProductImages.length) % allProductImages.length;
+            const lightboxImage = document.getElementById('lightboxImage');
+            lightboxImage.src = allProductImages[currentImageIndex];
+            updateCounter();
+        }
+
+        function updateCounter() {
+            const counter = document.getElementById('lightboxCounter');
+            counter.textContent = (currentImageIndex + 1) + ' / ' + allProductImages.length;
+        }
+
+        // Close lightbox when clicking outside the image
+        document.addEventListener('DOMContentLoaded', function() {
+            const lightbox = document.getElementById('imageLightbox');
+            lightbox.addEventListener('click', function(e) {
+                if (e.target === lightbox) {
+                    closeLightbox();
+                }
+            });
+
+            // Close with ESC key, navigate with arrow keys
+            document.addEventListener('keydown', function(e) {
+                const lightbox = document.getElementById('imageLightbox');
+                if (lightbox.classList.contains('active')) {
+                    if (e.key === 'Escape') {
+                        closeLightbox();
+                    } else if (e.key === 'ArrowRight') {
+                        nextImage();
+                    } else if (e.key === 'ArrowLeft') {
+                        previousImage();
+                    }
+                }
+            });
+        });
+
         // Image gallery functionality
         var MainImg = document.getElementById("MainImg");
         var smallimg = document.getElementsByClassName("small-img");
         
+        // Add click event to main image for lightbox
+        if (MainImg) {
+            MainImg.addEventListener('click', function() {
+                openLightbox(this.src);
+            });
+        }
+        
         for(let i = 0; i < smallimg.length; i++) {
             smallimg[i].onclick = function() {
                 MainImg.src = smallimg[i].src;
+                // Also open lightbox when clicking small images
+                openLightbox(smallimg[i].src);
             }
         }
         
@@ -643,8 +1009,10 @@ include_once 'includes/cart_count.php';
         <i class="fas fa-arrow-up"></i>
     </button>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js?v=<?php echo time(); ?>"></script>
     <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
     <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636811"></script>
 </body>
 </html>

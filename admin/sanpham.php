@@ -68,7 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_product']) && ($a
     $gia = isset($_POST['gia']) ? floatval($_POST['gia']) : 0;
     $gia_km = isset($_POST['gia_khuyen_mai']) ? floatval($_POST['gia_khuyen_mai']) : 0;
     $so_luong = isset($_POST['so_luong']) ? intval($_POST['so_luong']) : 0;
-    $mo_ta = isset($_POST['mo_ta']) ? trim($_POST['mo_ta']) : '';
+    $mo_ta = isset($_POST['mo_ta']) ? $_POST['mo_ta'] : ''; // Giữ nguyên HTML từ TinyMCE
+    $ct_sp = isset($_POST['ct_sp']) ? $_POST['ct_sp'] : ''; // Giữ nguyên HTML từ TinyMCE
     $mau_sac = isset($_POST['mau_sac']) ? trim($_POST['mau_sac']) : '';
     $id_danhmuc = isset($_POST['id_danhmuc']) ? intval($_POST['id_danhmuc']) : 0;
     
@@ -146,12 +147,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_product']) && ($a
     }
     // else: (UPLOAD_ERR_NO_FILE) -> Không có file. $hinh_path_db = '' và $upload_ok = true. -> Đúng.
 
-    // --- LOGIC LƯU VÀO DATABASE ---
+    // --- XỬ LÝ UPLOAD NHIỀU ẢNH PHỤ ---
+    $anh_con_paths = array();
+    
+    if (isset($_FILES['anh_con']) && is_array($_FILES['anh_con']['name'])) {
+        $total_files = count($_FILES['anh_con']['name']);
+        
+        for ($i = 0; $i < $total_files; $i++) {
+            // Kiểm tra từng file có được upload không
+            if ($_FILES['anh_con']['error'][$i] == UPLOAD_ERR_OK) {
+                $f_name = basename($_FILES['anh_con']['name'][$i]);
+                $f_tmp = $_FILES['anh_con']['tmp_name'][$i];
+                
+                if (is_dir($full_folder)) {
+                    $safe_name = preg_replace('/[\\\\\\/]+/', '', $f_name);
+                    $filename = $safe_name;
+                    $dest = $full_folder . DIRECTORY_SEPARATOR . $filename;
+                    $idx = 1;
+                    
+                    while (file_exists($dest)) {
+                        $ext = pathinfo($safe_name, PATHINFO_EXTENSION);
+                        $name_only = pathinfo($safe_name, PATHINFO_FILENAME);
+                        $filename = $name_only . '_sub' . $idx . '.' . $ext;
+                        $dest = $full_folder . DIRECTORY_SEPARATOR . $filename;
+                        $idx++;
+                    }
+                    
+                    if (move_uploaded_file($f_tmp, $dest)) {
+                        $anh_con_paths[] = 'img/products/' . $folder . '/' . $filename;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Chuyển mảng ảnh phụ thành chuỗi phân cách bởi |
+    $anh_con_db = !empty($anh_con_paths) ? implode('|', $anh_con_paths) : '';
+
     // --- LOGIC LƯU VÀO DATABASE ---
     // Chỉ chạy INSERT nếu $upload_ok (không có lỗi file)
     if ($upload_ok) { 
-        $stmt = $conn->prepare("INSERT INTO san_pham (ten_sanpham, gia, gia_khuyen_mai, so_luong, mo_ta, mau_sac, hinh_anh, id_danhmuc, created_at, update_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
-        $params = array($ten, $gia, $gia_km, $so_luong, $mo_ta, $mau_sac, $hinh_path_db, $id_danhmuc);
+        $stmt = $conn->prepare("INSERT INTO san_pham (ten_sanpham, gia, gia_khuyen_mai, so_luong, mo_ta, ct_sp, mau_sac, hinh_anh, anh_con, id_danhmuc, created_at, update_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+        $params = array($ten, $gia, $gia_km, $so_luong, $mo_ta, $ct_sp, $mau_sac, $hinh_path_db, $anh_con_db, $id_danhmuc);
         
         $ok = $stmt->execute($params);
         
@@ -174,7 +211,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_product']) && ($a
     $gia = isset($_POST['gia']) ? floatval($_POST['gia']) : 0;
     $gia_km = isset($_POST['gia_khuyen_mai']) ? floatval($_POST['gia_khuyen_mai']) : 0;
     $so_luong = isset($_POST['so_luong']) ? intval($_POST['so_luong']) : 0;
-    $mo_ta = isset($_POST['mo_ta']) ? trim($_POST['mo_ta']) : '';
+    $mo_ta = isset($_POST['mo_ta']) ? $_POST['mo_ta'] : ''; // Giữ nguyên HTML từ TinyMCE
+    $ct_sp = isset($_POST['ct_sp']) ? $_POST['ct_sp'] : ''; // Giữ nguyên HTML từ TinyMCE
     $mau_sac = isset($_POST['mau_sac']) ? trim($_POST['mau_sac']) : '';
     $id_danhmuc = isset($_POST['id_danhmuc']) ? intval($_POST['id_danhmuc']) : 0;
     
@@ -297,9 +335,71 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_product']) && ($a
         }
         // End of image handling
 
+        // --- XỬ LÝ UPLOAD NHIỀU ẢNH PHỤ (CHO SỬA SẢN PHẨM) ---
+        $anh_con_db = $prod['anh_con']; // Giữ ảnh cũ làm mặc định
+        
+        if (isset($_FILES['anh_con']) && is_array($_FILES['anh_con']['name'])) {
+            $anh_con_paths = array();
+            $total_files = count($_FILES['anh_con']['name']);
+            $has_new_files = false;
+            
+            // Kiểm tra xem có file mới được upload không
+            for ($i = 0; $i < $total_files; $i++) {
+                if ($_FILES['anh_con']['error'][$i] == UPLOAD_ERR_OK) {
+                    $has_new_files = true;
+                    break;
+                }
+            }
+            
+            // Nếu có file mới, xóa ảnh cũ và upload ảnh mới
+            if ($has_new_files) {
+                // Xóa các ảnh phụ cũ
+                if (!empty($prod['anh_con'])) {
+                    $old_anh_con = explode('|', $prod['anh_con']);
+                    foreach ($old_anh_con as $old_img) {
+                        $trimmed_old = trim($old_img);
+                        if (!empty($trimmed_old)) {
+                            $old_path = dirname(__FILE__) . '/../' . $trimmed_old;
+                            if (file_exists($old_path)) @unlink($old_path);
+                        }
+                    }
+                }
+                
+                // Upload ảnh mới
+                for ($i = 0; $i < $total_files; $i++) {
+                    if ($_FILES['anh_con']['error'][$i] == UPLOAD_ERR_OK) {
+                        $f_name = basename($_FILES['anh_con']['name'][$i]);
+                        $f_tmp = $_FILES['anh_con']['tmp_name'][$i];
+                        
+                        if (is_dir($full_folder)) {
+                            $safe_name = preg_replace('/[\\\\\\/]+/', '', $f_name);
+                            $filename = $safe_name;
+                            $dest = $full_folder . DIRECTORY_SEPARATOR . $filename;
+                            $idx = 1;
+                            
+                            while (file_exists($dest)) {
+                                $ext = pathinfo($safe_name, PATHINFO_EXTENSION);
+                                $name_only = pathinfo($safe_name, PATHINFO_FILENAME);
+                                $filename = $name_only . '_sub' . $idx . '.' . $ext;
+                                $dest = $full_folder . DIRECTORY_SEPARATOR . $filename;
+                                $idx++;
+                            }
+                            
+                            if (move_uploaded_file($f_tmp, $dest)) {
+                                $anh_con_paths[] = 'img/products/' . $folder . '/' . $filename;
+                            }
+                        }
+                    }
+                }
+                
+                // Cập nhật đường dẫn ảnh phụ mới
+                $anh_con_db = !empty($anh_con_paths) ? implode('|', $anh_con_paths) : '';
+            }
+        }
+
         // --- LOGIC UPDATE DATABASE ---
-        $stmtu = $conn->prepare("UPDATE san_pham SET ten_sanpham = ?, gia = ?, gia_khuyen_mai = ?, so_luong = ?, mo_ta = ?, mau_sac = ?, hinh_anh = ?, id_danhmuc = ?, update_at = NOW() WHERE id_sanpham = ?");
-        $ok = $stmtu->execute(array($ten, $gia, $gia_km, $so_luong, $mo_ta, $mau_sac, $hinh_path_db, $id_danhmuc, $id));
+        $stmtu = $conn->prepare("UPDATE san_pham SET ten_sanpham = ?, gia = ?, gia_khuyen_mai = ?, so_luong = ?, mo_ta = ?, ct_sp = ?, mau_sac = ?, hinh_anh = ?, anh_con = ?, id_danhmuc = ?, update_at = NOW() WHERE id_sanpham = ?");
+        $ok = $stmtu->execute(array($ten, $gia, $gia_km, $so_luong, $mo_ta, $ct_sp, $mau_sac, $hinh_path_db, $anh_con_db, $id_danhmuc, $id));
         
         if ($ok) {
             // Áp dụng POST-Redirect-GET
@@ -469,7 +569,39 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="col-md-12 mb-2">
                     <label>Mô tả</label>
-                    <textarea name="mo_ta" class="form-control" rows="4"><?php echo $is_edit ? htmlspecialchars($edit_data['mo_ta']) : (isset($mo_ta) ? htmlspecialchars($mo_ta) : ''); ?></textarea>
+                    <small class="text-muted d-block mb-1">Bạn có thể thêm chữ, hình ảnh, video, định dạng văn bản...</small>
+                    <textarea name="mo_ta" id="tinymce_editor_product" class="form-control" rows="15"><?php echo $is_edit ? $edit_data['mo_ta'] : (isset($mo_ta) ? $mo_ta : ''); ?></textarea>
+                </div>
+                <div class="col-md-12 mb-2">
+                    <label>Thông số sản phẩm</label>
+                    <small class="text-muted d-block mb-1">Nhập chi tiết thông số kỹ thuật, có thể thêm hình ảnh, video, bảng biểu...</small>
+                    <textarea name="ct_sp" id="tinymce_editor_specs" class="form-control" rows="15"><?php echo $is_edit ? $edit_data['ct_sp'] : (isset($ct_sp) ? $ct_sp : ''); ?></textarea>
+                </div>
+                <div class="col-md-12 mb-2">
+                    <label>Ảnh phụ sản phẩm (nhiều ảnh)</label>
+                    <small class="text-muted d-block mb-1">Chọn nhiều ảnh để hiển thị phía dưới ảnh chính</small>
+                    <input type="file" name="anh_con[]" class="form-control" multiple accept="image/*">
+                    <?php if ($is_edit && !empty($edit_data['anh_con'])): ?>
+                        <div class="mt-2">
+                            <label class="d-block mb-2">Ảnh phụ hiện tại:</label>
+                            <div class="row g-2">
+                                <?php 
+                                $anh_con_array = explode('|', $edit_data['anh_con']);
+                                foreach ($anh_con_array as $anh_con_item): 
+                                    $trimmed_item = trim($anh_con_item);
+                                    if (!empty($trimmed_item)):
+                                ?>
+                                <div class="col-md-2">
+                                    <img src="<?php echo htmlspecialchars($trimmed_item); ?>" class="img-thumbnail" style="width:100%; height:100px; object-fit:cover;" alt="Ảnh phụ">
+                                </div>
+                                <?php 
+                                    endif;
+                                endforeach; 
+                                ?>
+                            </div>
+                            <small class="text-info d-block mt-2"><i class="fas fa-info-circle"></i> Chọn ảnh mới để thay thế hoàn toàn các ảnh phụ hiện tại</small>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-md-12 text-end">
                     <button type="submit" name="save_product" class="btn btn-success"><?php echo $is_edit ? 'Cập nhật' : 'Lưu'; ?></button>
@@ -479,6 +611,116 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </form>
         <hr>
     </div>
+    
+    <!-- TinyMCE Editor Script -->
+    <script src="https://cdn.tiny.cloud/1/f0qu5j0bm9mm6kncwoq8rgcdhhgt0gf6gddmchbp6vle0221/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+        // Hàm validate form trước khi submit
+        function validateProductForm() {
+            // Lưu nội dung TinyMCE về textarea trước khi submit
+            if (tinymce.get('tinymce_editor_product')) {
+                tinymce.get('tinymce_editor_product').save();
+            }
+            if (tinymce.get('tinymce_editor_specs')) {
+                tinymce.get('tinymce_editor_specs').save();
+            }
+            return true;
+        }
+
+        // Cấu hình chung cho TinyMCE
+        var tinyMCEConfig = {
+            height: 400,
+            menubar: false,
+            language: 'vi',
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image media | link | code | help',
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+            
+            // Cấu hình upload ảnh - TinyMCE 6 yêu cầu return Promise
+            automatic_uploads: true,
+            images_upload_handler: function (blobInfo, progress) {
+                return new Promise(function(resolve, reject) {
+                    var xhr, formData;
+                    
+                    console.log('Bắt đầu upload ảnh:', blobInfo.filename());
+                    
+                    xhr = new XMLHttpRequest();
+                    xhr.withCredentials = false;
+                    xhr.open('POST', 'nhanvien/upload_image.php');
+                    
+                    xhr.upload.onprogress = function (e) {
+                        progress(e.loaded / e.total * 100);
+                    };
+                    
+                    xhr.onload = function() {
+                        console.log('Upload hoàn tất. Status:', xhr.status);
+                        console.log('Response:', xhr.responseText);
+                        console.log('Response type:', typeof xhr.responseText);
+                        
+                        if (xhr.status === 500) {
+                            console.error('Server error 500');
+                            reject('Lỗi server (500). Kiểm tra PHP error log.');
+                            return;
+                        }
+                        
+                        if (xhr.status != 200) {
+                            console.error('HTTP Error:', xhr.status);
+                            reject('Lỗi HTTP: ' + xhr.status);
+                            return;
+                        }
+                        
+                        try {
+                            var json = JSON.parse(xhr.responseText);
+                            if (!json || typeof json.location != 'string') {
+                                console.error('Invalid JSON response:', xhr.responseText);
+                                reject('Phản hồi không hợp lệ từ server');
+                                return;
+                            }
+                            console.log('Upload thành công:', json.location);
+                            resolve(json.location);
+                        } catch (e) {
+                            console.error('Lỗi parse JSON:', e);
+                            console.error('Response text:', xhr.responseText);
+                            reject('Lỗi xử lý phản hồi: ' + e.message + '. Response: ' + xhr.responseText.substring(0, 100));
+                        }
+                    };
+                    
+                    xhr.onerror = function () {
+                        console.error('XHR Error');
+                        reject('Lỗi kết nối đến server');
+                    };
+                    
+                    formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+                    xhr.send(formData);
+                });
+            }
+        };
+
+        // Khởi tạo TinyMCE Editor cho Mô tả sản phẩm
+        tinymce.init(Object.assign({}, tinyMCEConfig, {
+            selector: '#tinymce_editor_product'
+        }));
+
+        // Khởi tạo TinyMCE Editor cho Thông số sản phẩm
+        tinymce.init(Object.assign({}, tinyMCEConfig, {
+            selector: '#tinymce_editor_specs'
+        }));
+
+        // Gắn validation vào form
+        document.addEventListener('DOMContentLoaded', function() {
+            var productForm = document.querySelector('#productFormArea form');
+            if (productForm) {
+                productForm.addEventListener('submit', function(e) {
+                    return validateProductForm();
+                });
+            }
+        });
+    </script>
     
     <div class="filter-bar mb-4 p-3 bg-light rounded shadow-sm">
       <form method="GET" action="admin.php" class="row g-3 align-items-center">

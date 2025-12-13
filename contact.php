@@ -77,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title>AKISTORE - Liên hệ</title>
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>
+    <link rel="stylesheet" href="css/responsive.css?v=1765636813">">
     <style>
         /* Contact Page Styles */
         .contact-hero {
@@ -181,8 +182,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
         
         .contact-list p {
             margin: 0;
-            color: #555;
+            color: #000;
             line-height: 1.6;
+            font-size: 16px;
         }
         
         .map-container {
@@ -233,8 +235,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: #000;
             font-weight: 500;
+            font-size: 16px;
         }
         
         .form-group input,
@@ -243,7 +246,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
             padding: 15px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 16px;
+            color: #000;
             transition: border-color 0.3s ease;
             font-family: inherit;
         }
@@ -525,28 +529,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
             
             <div class="team-grid">
                 <div class="team-card">
-                    <img src="img/people/1.png" alt="Lê Văn Túc">
+                    <img src="img/AI_X4.jpg" alt="Lê Văn Túc">
                     <h3>Lê Văn Túc</h3>
-                    <p class="role">Senior Marketing Manager</p>
+                    <p class="role">Technical Manager</p>
                     <p class="contact-detail"><i class="fas fa-phone"></i> +84 123 456 789</p>
                     <p class="contact-detail"><i class="fas fa-envelope"></i> tuc@akistore.com</p>
                 </div>
                 
                 <div class="team-card">
-                    <img src="img/people/2.png" alt="Huỳnh Đình Chiểu">
+                    <img src="img/AI_X4.jpg" alt="Huỳnh Đình Chiểu">
                     <h3>Huỳnh Đình Chiểu</h3>
                     <p class="role">Customer Service Manager</p>
                     <p class="contact-detail"><i class="fas fa-phone"></i> +84 987 654 321</p>
                     <p class="contact-detail"><i class="fas fa-envelope"></i> chieu@akistore.com</p>
                 </div>
                 
-                <div class="team-card">
-                    <img src="img/people/3.png" alt="Nguyễn Văn A">
-                    <h3>Nguyễn Văn A</h3>
-                    <p class="role">Technical Support Manager</p>
-                    <p class="contact-detail"><i class="fas fa-phone"></i> +84 555 666 777</p>
-                    <p class="contact-detail"><i class="fas fa-envelope"></i> a@akistore.com</p>
-                </div>
             </div>
         </div>
 
@@ -644,5 +641,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
     
     <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
     <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636813"></script>
 </body>
 </html>

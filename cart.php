@@ -15,6 +15,10 @@ if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
 $user_id = $_SESSION['user_id'];
 $cart_items = array();
 $total_amount = 0;
+$shipping_fee = 0;
+$discount_percent = 0;
+$discount_amount = 0;
+$promo_code = '';
 
 try {
     // Kết nối database
@@ -22,11 +26,6 @@ try {
     $conn = $db->getConnection();
     
     // Truy vấn giỏ hàng với JOIN để lấy thông tin sản phẩm
-    // LƯU Ý: Do bảng gio_hang chưa lưu mau_sac_id, nên không thể hiển thị
-    // chính xác màu sắc đã chọn và giá của biến thể màu sắc.
-    // Tạm thời sử dụng thanh_tien đã lưu hoặc lấy giá từ bảng san_pham.
-    // TODO: Cần cập nhật cấu trúc bảng gio_hang để hỗ trợ mau_sac_id
-    
     $sql = "SELECT 
                 g.id_giohang,
                 g.id_sanpham,
@@ -47,10 +46,46 @@ try {
     $stmt->execute(array($user_id));
     $cart_items = $stmt->fetchAll();
     
-    // Tính tổng tiền
+    // Tính tổng tiền sản phẩm
     foreach ($cart_items as $item) {
         $total_amount += $item['thanh_tien'];
     }
+    
+    // Phí vận chuyển chuẩn cho mỗi đơn hàng (lấy từ cấu hình)
+    $shipping_fee = 15000; // 15,000 VND cho mỗi giỏ hàng
+    
+    // Tự động áp dụng mã giảm giá còn hiệu lực (không cần nhập)
+    $stmt_promo = $conn->prepare("SELECT id, ten_km, phan_tram_km FROM khuyen_mai 
+                                   WHERE (ngay_ket_thuc IS NULL OR ngay_ket_thuc >= CURDATE())
+                                   AND (ngay_bat_dau IS NULL OR ngay_bat_dau <= CURDATE())
+                                   ORDER BY phan_tram_km DESC 
+                                   LIMIT 1");
+    $stmt_promo->execute();
+    $promo_info = $stmt_promo->fetch();
+    
+    if ($promo_info) {
+        $discount_percent = $promo_info['phan_tram_km'];
+        $promo_code = $promo_info['ten_km'];
+        // Tính số tiền giảm (chỉ áp dụng cho tổng sản phẩm)
+        $discount_amount = ($total_amount * $discount_percent) / 100;
+        
+        // Lưu vào session để tracking
+        $_SESSION['promo_code'] = $promo_code;
+        $_SESSION['promo_id'] = $promo_info['id'];
+    }
+    
+    // Lưu thông tin vào session để sử dụng ở invoice.php
+    $_SESSION['cart_summary'] = array(
+        'subtotal' => $total_amount,
+        'shipping_fee' => $shipping_fee,
+        'discount_percent' => $discount_percent,
+        'discount_amount' => $discount_amount,
+        'promo_code' => $promo_code,
+        'total' => $total_amount + $shipping_fee - $discount_amount
+    );
+    
+    // Debug: Uncomment để xem giá trị
+    // echo "<!-- DEBUG: discount_percent = $discount_percent, discount_amount = $discount_amount, promo_code = $promo_code -->";
     
 } catch (PDOException $e) {
     $error_message = 'Lỗi database: ' . $e->getMessage();
@@ -69,7 +104,8 @@ foreach ($cart_items as $item) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title>KLTN Shop - Giỏ hàng</title>
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>
+    <link rel="stylesheet" href="css/responsive.css?v=1765636813">">
     <style>
         /* Cart Page Enhanced Styles */
         #cart table {
@@ -214,12 +250,23 @@ foreach ($cart_items as $item) {
         </section>
     <!--Cart page-->
     <section id="page-header" class="about-header">
-        <h2>#giohang</h2>
-        <p>Xem lại giỏ hàng của bạn</p>
+         <h1 style="color:#f8f8f8">Giỏ hàng của bạn</h1> 
     </section>
 
     <?php if (isset($error_message)): ?>
         <div class="error-alert section-p1"><?php echo $error_message; ?></div>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['promo_message'])): ?>
+        <div class="section-p1" style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <i class="fas fa-check-circle"></i> <?php echo $_SESSION['promo_message']; unset($_SESSION['promo_message']); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['promo_error'])): ?>
+        <div class="section-p1" style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <i class="fas fa-exclamation-circle"></i> <?php echo $_SESSION['promo_error']; unset($_SESSION['promo_error']); ?>
+        </div>
     <?php endif; ?>
 
     <?php if (!empty($cart_items)): ?>
@@ -281,11 +328,23 @@ foreach ($cart_items as $item) {
 
     <section id="cart-add" class="section-p1">
         <div id="coupon">
-            <h3>Áp dụng phiếu giảm giá</h3>
-            <div>
-                <input type="text" placeholder="Nhập mã giảm giá">
-                <button class="normal">Áp dụng</button>
-            </div>
+            <?php if (!empty($promo_code)): ?>
+                <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 16px;">
+                        <i class="fas fa-gift"></i> Khuyến mãi đang áp dụng
+                    </h4>
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>Mã: <?php echo htmlspecialchars($promo_code); ?></strong> 
+                        - Giảm <?php echo $discount_percent; ?>%
+                    </p>
+                </div>
+            <?php else: ?>
+                <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin: 0; font-size: 14px;">
+                        <i class="fas fa-info-circle"></i> Hiện tại chưa có chương trình khuyến mãi nào
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
         <div id="subtotal">
             <h3>Tổng thanh toán</h3>
@@ -294,13 +353,23 @@ foreach ($cart_items as $item) {
                     <td>Tạm tính</td>
                     <td id="subtotal-amount"><?php echo number_format($total_amount, 0, ',', '.'); ?>VNĐ</td>
                 </tr>
+                <?php if ($discount_percent > 0): ?>
                 <tr>
-                    <td>Phí vận chuyển</td>
-                    <td>Miễn phí</td>
+                    <td>Giảm giá (<?php echo $discount_percent; ?>%)</td>
+                    <td style="color: red;" id="discount-amount">-<?php echo number_format($discount_amount, 0, ',', '.'); ?>VNĐ</td>
                 </tr>
                 <tr>
+                    <td><strong>Tổng tạm tính</strong></td>
+                    <td><strong id="after-discount-amount"><?php echo number_format($total_amount - $discount_amount, 0, ',', '.'); ?>VNĐ</strong></td>
+                </tr>
+                <?php endif; ?>
+                <tr>
+                    <td>Phí vận chuyển</td>
+                    <td id="shipping-amount"><?php echo number_format($shipping_fee, 0, ',', '.'); ?>VNĐ</td>
+                </tr>
+                <tr style="border-top: 2px solid #ddd;">
                     <td><strong>Tổng cộng</strong></td>
-                    <td><strong id="total-amount"><?php echo number_format($total_amount, 0, ',', '.'); ?>VNĐ</strong></td>
+                    <td><strong id="total-amount" style="color: #088178; font-size: 18px;"><?php echo number_format($total_amount + $shipping_fee - $discount_amount, 0, ',', '.'); ?>VNĐ</strong></td>
                 </tr>
             </table>
             <a href="invoice.php"><button class="normal">Tiến hành thanh toán</button></a>
@@ -420,14 +489,40 @@ foreach ($cart_items as $item) {
         
         // Cập nhật tổng tiền
         function updateTotalAmount() {
-            let total = 0;
+            let subtotal = 0;
             document.querySelectorAll('.item-total').forEach(item => {
                 const amount = parseFloat(item.textContent.replace(/[^\d]/g, ''));
-                total += amount;
+                subtotal += amount;
             });
             
-            document.getElementById('subtotal-amount').textContent = new Intl.NumberFormat('vi-VN').format(total) + 'VNĐ';
-            document.getElementById('total-amount').textContent = new Intl.NumberFormat('vi-VN').format(total) + 'VNĐ';
+            // Lấy phí vận chuyển
+            const shippingText = document.getElementById('shipping-amount').textContent;
+            const shippingFee = parseFloat(shippingText.replace(/[^\d]/g, ''));
+            
+            // Lấy giảm giá nếu có
+            let discount = 0;
+            const discountElement = document.getElementById('discount-amount');
+            if (discountElement) {
+                const discountText = discountElement.textContent;
+                discount = parseFloat(discountText.replace(/[^\d]/g, ''));
+            }
+            
+            // Tính tổng tạm tính (sau giảm giá)
+            const afterDiscount = subtotal - discount;
+            
+            // Tính tổng cộng
+            const finalTotal = afterDiscount + shippingFee;
+            
+            // Cập nhật các giá trị
+            document.getElementById('subtotal-amount').textContent = new Intl.NumberFormat('vi-VN').format(subtotal) + 'VNĐ';
+            
+            // Cập nhật tổng tạm tính nếu có giảm giá
+            const afterDiscountElement = document.getElementById('after-discount-amount');
+            if (afterDiscountElement) {
+                afterDiscountElement.textContent = new Intl.NumberFormat('vi-VN').format(afterDiscount) + 'VNĐ';
+            }
+            
+            document.getElementById('total-amount').textContent = new Intl.NumberFormat('vi-VN').format(finalTotal) + 'VNĐ';
         }
     </script>
 
@@ -454,5 +549,6 @@ foreach ($cart_items as $item) {
     <script src="script.js?v=<?php echo time(); ?>"></script>
     <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
     <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636813"></script>
 </body>
 </html>

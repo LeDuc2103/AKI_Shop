@@ -2,6 +2,12 @@
 // File: nhanvien/banner.php
 // Chức năng: Quản lý banner cho nhân viên bán hàng
 
+// Tăng giới hạn upload file lên 20MB
+@ini_set('upload_max_filesize', '20M');
+@ini_set('post_max_size', '20M');
+@ini_set('memory_limit', '256M');
+@ini_set('max_execution_time', '300');
+
 if (!isset($conn)) {
     echo "<div class='alert alert-danger'>Không tìm thấy kết nối cơ sở dữ liệu.</div>";
     return;
@@ -70,6 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_banner'])) {
                 if ($_FILES['hinh_anh']['error'] == UPLOAD_ERR_OK) {
                     $f = $_FILES['hinh_anh'];
                     
+                    // Kiểm tra kích thước file (tối đa 15MB)
+                    $max_file_size = 15 * 1024 * 1024; // 15MB
+                    if ($f['size'] > $max_file_size) {
+                        $error_message = 'Lỗi: File ảnh quá lớn. Kích thước tối đa cho phép là 15MB. File của bạn: ' . round($f['size'] / (1024 * 1024), 2) . 'MB';
+                        $upload_ok = false;
+                    } else {
+                    
                     if (is_dir($upload_dir)) {
                         $orig = basename($f['name']);
                         $safe_name = preg_replace('/[\\\\\\/]+/', '', $orig);
@@ -95,12 +108,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_banner'])) {
                         $error_message = 'Lỗi 2: Thư mục lưu ảnh không tồn tại.';
                         $upload_ok = false;
                     }
+                    }
                     
                 } else {
                     $upload_ok = false;
                     switch ($_FILES['hinh_anh']['error']) {
                         case UPLOAD_ERR_INI_SIZE:
-                            $error_message = 'Lỗi: File ảnh quá lớn (vượt quá upload_max_filesize trong php.ini).';
+                            $error_message = 'Lỗi: File ảnh quá lớn (vượt quá upload_max_filesize ' . ini_get('upload_max_filesize') . ' trong php.ini). Vui lòng chọn file nhỏ hơn 15MB.';
+                            break;
+                        case UPLOAD_ERR_FORM_SIZE:
+                            $error_message = 'Lỗi: File ảnh vượt quá giới hạn cho phép trong form.';
                             break;
                         case UPLOAD_ERR_PARTIAL:
                             $error_message = 'Lỗi: File chỉ được upload một phần.';
@@ -246,7 +263,7 @@ if ($action == 'add' || $action == 'edit') {
                                     </div>
                                 <?php endif; ?>
                                 <input type="file" name="hinh_anh" class="form-control" accept="image/*">
-                                <small class="text-muted">Định dạng: JPG, PNG, GIF. Kích thước đề xuất: 1920x600px</small>
+                                <small class="text-muted">Định dạng: JPG, PNG, GIF. Kích thước đề xuất: 2839x1016px (Tối đa 15MB)</small>
                             </div>
                         </div>
                         

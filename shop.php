@@ -128,7 +128,8 @@ include_once 'includes/cart_count.php';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title>KLTN Shop - Sản phẩm</title>
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="pagination-style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="pagination-style.css?v=<?php echo time(); ?>
+    <link rel="stylesheet" href="css/responsive.css?v=1765636811">">
 </head>
 <body>
     <section id="header">
@@ -196,8 +197,8 @@ include_once 'includes/cart_count.php';
         </section>
     <!--Shop page-->
     <section id="page-header">
-        <h2>SẢN PHẨM</h2>
-        <p>Tiết kiệm nhiều hơn với phiếu giảm giá lên tới 5% - 50%.</p>
+        <h1 style="color: #fff3cd;">SẢN PHẨM</h1>
+        <h4 style="color: #fff3cd;">Tiết kiệm nhiều hơn với phiếu giảm giá lên tới 5% - 50%.</h4>
     </section>
     
     <!-- Shop Container with Filter -->
@@ -454,5 +455,6 @@ include_once 'includes/cart_count.php';
          <script src="script.js?v=<?php echo time(); ?>"></script></script>
          <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
          <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636811"></script>
 </body>
 </html>

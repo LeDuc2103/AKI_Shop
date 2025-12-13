@@ -1,4 +1,15 @@
 <?php
+// Xử lý webhook SePay trước khi bất kỳ output nào
+if (isset($_GET['controller']) && $_GET['controller'] === 'webhook_sepay') {
+    require_once 'controllers/WebhookSepayController.php';
+    $webhookController = new WebhookSepayController();
+    
+    if (isset($_GET['action']) && $_GET['action'] === 'handle') {
+        $webhookController->handle();
+        exit; // Dừng xử lý sau khi webhook xong
+    }
+}
+
 session_start();
 header('Content-Type: text/html; charset=utf-8');
 require_once 'config/database.php';
@@ -151,6 +162,9 @@ include_once 'includes/cart_count.php';
         <?php endif; ?>
         <button>MUA NGAY</button>
     </section>
+    
+ 
+    
     <!-- Featured -->
      <section id="feature" class="section-p1">
         <div class="fe-box">
@@ -250,10 +264,11 @@ include_once 'includes/cart_count.php';
         </section>
         <!-- banner mid -->
          <section id="banner" class="section-m1">
-            <h4>DỊCH VỤ SỬA CHỮA</h4>
+            <h2>DỊCH VỤ SỬA CHỮA</h2>
             <h2>Lên đến <span>Giảm từ 10%-30%</span>-Tất cả các dòng máy đọc sách.</h2>
-            <button class="normal">Tìm hiểu thêm</button>
-
+            <a href="dich_vu_sua_chua.php" class="repair-cta-button">
+                <i class="fas fa-tools"></i> Tìm hiểu thêm
+            </a>
          </section>
         <!-- Product -->
          <section id="product1" class="section-p1" id="new-section">
@@ -324,7 +339,7 @@ include_once 'includes/cart_count.php';
 
          </section>
             <!-- footer -->
-             <footer id="section-p1">
+             <!-- <footer id="section-p1">
                 <div class="col">
                     <img class="logo" src="img/logo7.png" width="120px" alt="">
                     <h4>Thông Tin Liên Hệ</h4>
@@ -364,8 +379,53 @@ include_once 'includes/cart_count.php';
                 <div class="copyright">
                     <p>© 2025 KLTN Project by Le Van Tuc - Huynh Dinh Chieu</p>
                 </div>
-             </footer>
-
+             </footer> -->
+            <footer id="section-p1">
+    <div class="col">
+        <img class="logo" src="img/logo7.png" width="120px" alt="">
+        <h4>Thông Tin Liên Hệ</h4>
+        <p><Strong>Địa chỉ: </Strong>124 Lê Quang Định, phường Bình Thạnh, TP.HỒ CHÍ MINH, VIỆT NAM</p>
+        <p><Strong>Điện thoại: </Strong>+84 123 456 789</p>
+        <p><Strong>Giờ làm việc: </Strong> 8:00 - 17:00, Thứ 2 - Thứ 7</p>
+        <div class="follow">
+            <h4>Theo dõi chúng tôi</h4>
+            <div class="icon">
+                <i class="fa-brands fa-facebook-f"></i>
+                <i class="fa-brands fa-telegram"></i>
+                <i class="fa-brands fa-instagram"></i>
+                <i class="fa-brands fa-youtube"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <h4>Liên hệ</h4>
+        <a href="about.php">Về chúng tôi</a>
+        <a href="#">Thông tin giao hàng</a>
+        <a href="contact.php">Liên hệ chúng tôi</a>
+    </div>
+    <div class="col">
+        <h4>Chính sách</h4>
+        <a href="chinhsachbaomat.php">Chính sách bảo mật</a>
+        <a href="chinh_sach_doi_tra.php">Chính sách đổi trả</a>
+        <a href="dieukhoan.php">Điều khoản & Điều kiện</a>
+        <a href="chinhsachbaohanh.php">Chính sách bảo hành</a>
+    </div>
+    <div class="col">
+        <h4>Tài khoản của tôi</h4>
+        <a href="login.php">Đăng nhập</a>
+        <a href="register.php">Đăng ký</a>
+        <a href="cart.php">Xem giỏ hàng</a>
+        <a href="#">Yêu thích</a>
+        <a href="#">Theo dõi đơn hàng</a>
+    </div>
+    <div class="col install">
+        <p>Thanh toán an toàn cho các giao dịch trực tuyến</p>
+        <img src="img/pay/pay.png" alt="">
+    </div>
+    <div class="copyright">
+        <p>© 2025 KLTN Project by Le Van Tuc - Huynh Dinh Chieu</p>
+    </div>
+</footer>
              <!-- Search Box -->
              <div class="search-box" id="search-box">
                  <div class="search-container">
@@ -445,7 +505,8 @@ include_once 'includes/cart_count.php';
              </script>
 
              <script src="script.js?v=<?php echo time(); ?>"></script>
-             <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
+             <script src="https://cdn.botpress.cloud/webchat/v3.5/inject.js" defer></script>
              <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636810"></script>
 </body>
 </html>

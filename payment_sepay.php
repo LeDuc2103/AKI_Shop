@@ -32,10 +32,23 @@ try {
         exit();
     }
     
-    // Calculate total
+    // Get total from session (includes discount and shipping)
     $tong_thanhtoan = 0;
-    foreach ($cart_items as $item) {
-        $tong_thanhtoan += $item['gia'] * $item['so_luong'];
+    $tien_hang = 0;
+    $tien_ship = 30000; // Default shipping
+    $giam_gia = 0;
+    
+    if (isset($_SESSION['cart_summary'])) {
+        $tien_hang = $_SESSION['cart_summary']['subtotal'];
+        $tien_ship = $_SESSION['cart_summary']['shipping_fee'];
+        $giam_gia = $_SESSION['cart_summary']['discount_amount'];
+        $tong_thanhtoan = $_SESSION['cart_summary']['total'];
+    } else {
+        // Fallback: calculate from cart items
+        foreach ($cart_items as $item) {
+            $tien_hang += $item['gia'] * $item['so_luong'];
+        }
+        $tong_thanhtoan = $tien_hang + $tien_ship;
     }
     
     // Get user info
@@ -64,7 +77,7 @@ try {
         ) VALUES (
             :ma_user, :ten_nguoinhan, :email_nguoinhan, :so_dienthoai, :diachi_nhan,
             :tong_tien, 'SePay QR', 'chua_thanh_toan',
-            'cho_xu_ly', 'chưa thanh toán', :order_code, NOW(), :tien_hang, 15000
+            'cho_xu_ly', 'chưa thanh toán', :order_code, NOW(), :tien_hang, :tien_ship
         )
     ");
     
@@ -74,8 +87,9 @@ try {
         ':email_nguoinhan' => $user['email'],
         ':so_dienthoai' => isset($user['phone']) ? $user['phone'] : '',
         ':diachi_nhan' => isset($user['dia_chi']) ? $user['dia_chi'] : '',
-        ':tong_tien' => $tong_thanhtoan + 15000,
-        ':tien_hang' => $tong_thanhtoan,
+        ':tong_tien' => $tong_thanhtoan,
+        ':tien_hang' => $tien_hang,
+        ':tien_ship' => $tien_ship,
         ':order_code' => $order_code
     ));
     

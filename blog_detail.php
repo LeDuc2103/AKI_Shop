@@ -35,7 +35,8 @@ if (!$news_detail) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title><?php echo htmlspecialchars($news_detail['tieu_de']); ?> - KLTN Shop</title>
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>
+    <link rel="stylesheet" href="css/responsive.css?v=1765636812">">
     <style>
         .news-detail-container {
             max-width: 1200px;
@@ -240,5 +241,6 @@ if (!$news_detail) {
     <script src="script.js?v=<?php echo time(); ?>"></script>
     <script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js" defer></script>
     <script src="https://files.bpcontent.cloud/2025/11/26/16/20251126163853-AFN0KSEV.js" defer></script>
+    <script src="js/mobile-responsive.js?v=1765636812"></script>
 </body>
 </html>

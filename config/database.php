@@ -4,7 +4,7 @@
  * PHP 5.2.6 Compatible
  */
 class Database {
-    private $host = "localhost";
+    private $host = "localhost:3307";
     private $db_name = "tuc";
     private $username = "root";
     private $password = "";

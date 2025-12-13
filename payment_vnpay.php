@@ -22,6 +22,18 @@ $user = $stmtUser->fetch();
 // Lấy giỏ hàng hiện tại
 $cart_items = array();
 $tong_tien_hang = 0;
+$tien_ship = 30000;
+$discount_amount = 0;
+$promo_code = '';
+
+// Lấy thông tin từ session nếu có
+if (isset($_SESSION['cart_summary'])) {
+    $cart_summary = $_SESSION['cart_summary'];
+    $tong_tien_hang = $cart_summary['subtotal'];
+    $tien_ship = $cart_summary['shipping_fee'];
+    $discount_amount = $cart_summary['discount_amount'];
+    $promo_code = $cart_summary['promo_code'];
+}
 
 $sqlCart = "SELECT 
                 g.id_giohang,
@@ -40,8 +52,10 @@ $stmtCart = $conn->prepare($sqlCart);
 $stmtCart->execute(array($user_id));
 $cart_items = $stmtCart->fetchAll();
 
-foreach ($cart_items as $item) {
-    $tong_tien_hang += $item['thanh_tien'];
+if (!isset($_SESSION['cart_summary'])) {
+    foreach ($cart_items as $item) {
+        $tong_tien_hang += $item['thanh_tien'];
+    }
 }
 
 // Nếu giỏ hàng trống thì quay lại trang giỏ hàng
@@ -50,9 +64,8 @@ if (empty($cart_items)) {
     exit();
 }
 
-// Thiết lập phí ship và tổng tiền
-$tien_ship = 15000; // có thể cấu hình sau
-$tong_tien = $tong_tien_hang + $tien_ship;
+// Tính tổng tiền (đã trừ giảm giá)
+$tong_tien = $tong_tien_hang + $tien_ship - $discount_amount;
 
 // Tạo đơn hàng trong bảng don_hang
 $ten_nguoinhan   = $user ? $user['ho_ten'] : 'Khách hàng';
@@ -81,6 +94,13 @@ $stmtOrder->execute(array(
     ':ma_user'         => $user_id
 ));
 
+// Lưu ghi chú về mã khuyến mãi đã áp dụng (nếu có)
+if (!empty($promo_code)) {
+    // Có thể thêm vào ghi chú hoặc bảng riêng nếu cần
+    // Tạm thời lưu vào session để tracking
+    $_SESSION['order_promo_applied'] = $promo_code;
+}
+
 // Lấy ma_donhang (primary key của bảng don_hang) từ lastInsertId
 $ma_donhang = $conn->lastInsertId();
 
@@ -105,7 +125,8 @@ foreach ($cart_items as $item) {
     $updateStock->execute(array($item['so_luong'], $item['id_sanpham']));
 }
 
-// Không xóa giỏ hàng ở đây, chờ thanh toán thành công rồi mới xóa nếu cần
+// KHÔNG xóa giỏ hàng ngay - chỉ xóa khi thanh toán thành công trong vnpay_return.php
+// Nếu khách hàng không thanh toán, họ có thể quay lại giỏ hàng
 
 // Chuẩn bị dữ liệu gửi sang VNPay
 // VNPay yêu cầu vnp_TxnRef là string, nên convert ma_donhang sang string
@@ -115,7 +136,7 @@ $order_type = "other";
 $amount     = (int)$tong_tien; // VNĐ - Đảm bảo là số nguyên
 $language   = "vn";
 $bank_code  = "";
-$expire     = date('YmdHis', strtotime('+15 minutes'));
+$expire     = date('YmdHis', strtotime('+30 minutes')); // Tăng lên 30 phút
 
 // Thông tin billing / hóa đơn gửi tối thiểu
 $billing_fullname = $ten_nguoinhan;
@@ -130,6 +151,7 @@ $billing_address  = $diachi_nhan;
     <meta charset="UTF-8">
     <title>Đang chuyển tới cổng thanh toán VNPay...</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636814">
 </head>
 <body>
     <p>Đang chuyển tới cổng thanh toán VNPay, vui lòng chờ trong giây lát...</p>
@@ -165,5 +187,6 @@ $billing_address  = $diachi_nhan;
     <script>
         document.getElementById('vnpay_form').submit();
     </script>
+    <script src="js/mobile-responsive.js?v=1765636814"></script>
 </body>
 </html>

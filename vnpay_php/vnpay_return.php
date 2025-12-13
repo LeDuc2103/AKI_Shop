@@ -50,8 +50,46 @@ if ($isValidHash) {
         $paymentIcon = 'fa-check-circle';
     } else {
         $paymentStatus = 'failed';
-        $paymentMessage = 'Thanh toán thất bại';
         $paymentIcon = 'fa-times-circle';
+        
+        // Xử lý các mã lỗi cụ thể
+        switch ($vnpResponseCode) {
+            case '07':
+                $paymentMessage = 'Giao dịch đã quá thời gian chờ thanh toán. Vui lòng thực hiện lại giao dịch.';
+                break;
+            case '09':
+                $paymentMessage = 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng.';
+                break;
+            case '10':
+                $paymentMessage = 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần';
+                break;
+            case '11':
+                $paymentMessage = 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Vui lòng thực hiện lại giao dịch.';
+                break;
+            case '12':
+                $paymentMessage = 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa.';
+                break;
+            case '13':
+                $paymentMessage = 'Giao dịch không thành công do Quý khách nhập sai mật khẩu xác thực giao dịch (OTP). Vui lòng thực hiện lại giao dịch.';
+                break;
+            case '24':
+                $paymentMessage = 'Giao dịch không thành công do: Khách hàng hủy giao dịch';
+                break;
+            case '51':
+                $paymentMessage = 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch.';
+                break;
+            case '65':
+                $paymentMessage = 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày.';
+                break;
+            case '75':
+                $paymentMessage = 'Ngân hàng thanh toán đang bảo trì. Vui lòng thử lại sau.';
+                break;
+            case '79':
+                $paymentMessage = 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định. Vui lòng thực hiện lại giao dịch';
+                break;
+            default:
+                $paymentMessage = 'Thanh toán không thành công. Mã lỗi: ' . $vnpResponseCode;
+        }
     }
 } else {
     $paymentStatus = 'error';
@@ -99,6 +137,15 @@ if ($isSuccess && $ma_donhang) {
                                               trang_thai = 'xac_nhan'
                                           WHERE ma_donhang = ?");
                 $update->execute(array($ma_donhang));
+                
+                // Xóa giỏ hàng sau khi thanh toán thành công
+                $ma_user = $order['ma_user'];
+                $deleteCart = $conn->prepare("DELETE FROM gio_hang WHERE ma_user = ?");
+                $deleteCart->execute(array($ma_user));
+                
+                // Xóa session cart_summary và promo_code
+                unset($_SESSION['cart_summary']);
+                unset($_SESSION['promo_code']);
 
                 // Xóa giỏ hàng của user sau khi thanh toán thành công
                 $deleteCart = $conn->prepare("DELETE FROM gio_hang WHERE ma_user = ?");

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SePay Webhook</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        #result.success {
+            background: #d1e7dd;
+            border: 2px solid #198754;
+            color: #0f5132;
+        }
+        #result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #842029;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .info-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test SePay Webhook</h1>
+        
+        <div class="info-box">
+            <strong>📝 Hướng dẫn:</strong> Tool này giúp test webhook bằng cách giả lập SePay gửi thông báo giao dịch.
+        </div>
+
+        <div class="form-group">
+            <label>Chọn đơn hàng test:</label>
+            <select id="orderSelect" onchange="updateWebhookData()">
+                <option value="">-- Chọn đơn hàng --</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Hoặc nhập mã đơn hàng thủ công (DH0001):</label>
+            <input type="text" id="manualOrder" placeholder="DH0001" onchange="updateManualOrder()">
+        </div>
+
+        <div class="form-group">
+            <label>Số tiền (VNĐ):</label>
+            <input type="number" id="amount" value="10000" onchange="updateWebhookData()">
+        </div>
+
+        <div class="form-group">
+            <label>Webhook Data (JSON):</label>
+            <textarea id="webhookData"></textarea>
+        </div>
+
+        <button onclick="sendWebhook()">🚀 Gửi Webhook Test</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Load orders from database
+        async function loadOrders() {
+            try {
+                const response = await fetch('get_orders_for_test.php');
+                const orders = await response.json();
+                
+                const select = document.getElementById('orderSelect');
+                orders.forEach(order => {
+                    const option = document.createElement('option');
+                    option.value = order.ma_donhang;
+                    option.textContent = `DH${String(order.ma_donhang).padStart(4, '0')} - ${new Intl.NumberFormat('vi-VN').format(order.tong_tien)} VNĐ - ${order.trangthai_thanhtoan}`;
+                    option.dataset.amount = order.tong_tien;
+                    select.appendChild(option);
+                });
+                
+                if (orders.length > 0) {
+                    select.selectedIndex = 1; // Select first order
+                    updateWebhookData();
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        function updateWebhookData() {
+            const select = document.getElementById('orderSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption.value) return;
+            
+            const orderId = selectedOption.value;
+            const amount = parseInt(selectedOption.dataset.amount);
+            
+            document.getElementById('amount').value = amount;
+            
+            const data = {
+                "id": Math.floor(Math.random() * 1000000),
+                "gateway": "MBBank",
+                "transactionDate": new Date().toISOString().slice(0, 19).replace('T', ' '),
+                "accountNumber": "0981523130",
+                "subAccount": "",
+                "transferType": "in",
+                "transferAmount": amount,
+                "accumulated": amount,
+                "code": "IN",
+                "content": `Thanh toan don hang DH${String(orderId).padStart(4, '0')}`,
+                "referenceCode": `FT${Date.now()}`,
+                "description": `NGUYEN VAN A chuyen tien`
+            };
+            
+            document.getElementById('webhookData').value = JSON.stringify(data, null, 2);
+        }
+
+        function updateManualOrder() {
+            const manualOrder = document.getElementById('manualOrder').value.trim();
+            if (!manualOrder) return;
+            
+            // Extract number from DH0001 format
+            const match = manualOrder.match(/DH(\d+)/i);
+            if (!match) {
+                alert('Định dạng không hợp lệ. Vui lòng nhập DH0001, DH0002, ...');
+                return;
+            }
+            
+            const orderId = parseInt(match[1]);
+            const amount = parseInt(document.getElementById('amount').value) || 10000;
+            
+            const data = {
+                "id": Math.floor(Math.random() * 1000000),
+                "gateway": "MBBank",
+                "transactionDate": new Date().toISOString().slice(0, 19).replace('T', ' '),
+                "accountNumber": "0981523130",
+                "subAccount": "",
+                "transferType": "in",
+                "transferAmount": amount,
+                "accumulated": amount,
+                "code": "IN",
+                "content": `Thanh toan don hang DH${String(orderId).padStart(4, '0')}`,
+                "referenceCode": `FT${Date.now()}`,
+                "description": `NGUYEN VAN A chuyen tien`
+            };
+            
+            document.getElementById('webhookData').value = JSON.stringify(data, null, 2);
+            document.getElementById('orderSelect').selectedIndex = 0;
+        }
+
+        async function sendWebhook() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = '';
+            resultDiv.innerHTML = '<strong>⏳ Đang gửi webhook...</strong>';
+
+            try {
+                const webhookData = JSON.parse(document.getElementById('webhookData').value);
+                
+                const response = await fetch('sepay/sepay_webhook.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(webhookData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Webhook thành công!</strong>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                        <p style="margin-top: 15px;">
+                            <strong>✓</strong> Giao dịch đã được lưu vào <code>tb_transactions</code><br>
+                            <strong>✓</strong> Trạng thái đơn hàng đã cập nhật thành <code>da_thanh_toan</code><br>
+                            <strong>✓</strong> Trang order.php sẽ tự động chuyển về payment_success.php
+                        </p>
+                    `;
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ Webhook thất bại!</strong>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                        <p style="margin-top: 10px;">
+                            <strong>Lỗi:</strong> ${result.message || 'Unknown error'}
+                        </p>
+                    `;
+                }
+
+                console.log('Response:', result);
+                console.log('Status:', response.status);
+
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `
+                    <strong>❌ Lỗi:</strong>
+                    <pre>${error.message}</pre>
+                `;
+                console.error('Error:', error);
+            }
+        }
+
+        // Load orders on page load
+        loadOrders();
+    </script>
+</body>
+</html>

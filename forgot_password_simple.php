@@ -8,15 +8,16 @@ $success = '';
 // Xử lý form đổi mật khẩu
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = trim($_POST['email']);
+    $old_password = $_POST['old_password'];
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
     
-    if (empty($email) || empty($new_password) || empty($confirm_password)) {
+    if (empty($email) || empty($old_password) || empty($new_password) || empty($confirm_password)) {
         $error = 'Vui lòng điền đầy đủ thông tin!';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Email không hợp lệ!';
     } elseif (strlen($new_password) < 6) {
-        $error = 'Mật khẩu phải có ít nhất 6 ký tự!';
+        $error = 'Mật khẩu mới phải có ít nhất 6 ký tự!';
     } elseif ($new_password !== $confirm_password) {
         $error = 'Mật khẩu xác nhận không khớp!';
     } else {
@@ -24,13 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $db = new Database();
             $conn = $db->getConnection();
             
-            // Kiểm tra email có tồn tại không
-            $stmt = $conn->prepare("SELECT ma_user, ho_ten FROM user WHERE email = ?");
+            // Kiểm tra email và mật khẩu cũ
+            $stmt = $conn->prepare("SELECT ma_user, ho_ten, password FROM user WHERE email = ?");
             $stmt->execute(array($email));
             $user = $stmt->fetch();
             
             if (!$user) {
                 $error = 'Email không tồn tại trong hệ thống!';
+            } elseif (md5($old_password) !== $user['password']) {
+                $error = 'Mật khẩu cũ không đúng!';
             } else {
                 // Cập nhật mật khẩu mới
                 $hashed_password = md5($new_password);
@@ -159,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
         
         .form-group label {
@@ -169,6 +173,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-size: 14px;
         }
         
+        .password-wrapper {
+            position: relative;
+        }
+        
         .form-group input {
             width: 100%;
             padding: 14px;
@@ -176,6 +184,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 8px;
             font-size: 15px;
             transition: border-color 0.3s;
+        }
+        
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+        
+        .toggle-password:hover {
+            color: #088178;
         }
         
         .form-group input:focus {
@@ -232,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="header">
             <i class="fas fa-key"></i>
             <h2>Đổi Mật Khẩu</h2>
-            <p>Nhập email và mật khẩu mới</p>
+            <p>Nhập email và mật khẩu mới để đổi mật khẩu</p>
         </div>
         
         <?php if ($success): ?>
@@ -248,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
         
         <div class="info-text">
-            <i class="fas fa-info-circle"></i> Nhập email của bạn và mật khẩu mới để đổi mật khẩu.
+            <i class="fas fa-info-circle"></i> Nhập email của bạn và mật khẩu cũ để xác nhận, sau đó nhập mật khẩu mới để đổi mật khẩu.
         </div>
         
         <form method="POST" action="">
@@ -258,14 +285,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             
             <div class="form-group">
+                <label for="old_password"><i class="fas fa-lock"></i> Mật khẩu cũ</label>
+                <div class="password-wrapper">
+                    <input type="password" id="old_password" name="old_password" placeholder="Nhập mật khẩu cũ" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword('old_password', this)"></i>
+                </div>
+            </div>
+            
+            <div class="form-group">
                 <label for="new_password"><i class="fas fa-lock"></i> Mật khẩu mới</label>
-                <input type="password" id="new_password" name="new_password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)" required>
+                <div class="password-wrapper">
+                    <input type="password" id="new_password" name="new_password" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword('new_password', this)"></i>
+                </div>
                 <div class="password-strength" id="password-strength"></div>
             </div>
             
             <div class="form-group">
                 <label for="confirm_password"><i class="fas fa-lock"></i> Xác nhận mật khẩu</label>
-                <input type="password" id="confirm_password" name="confirm_password" placeholder="Nhập lại mật khẩu mới" required>
+                <div class="password-wrapper">
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Nhập lại mật khẩu mới" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword('confirm_password', this)"></i>
+                </div>
             </div>
             
             <button type="submit" class="btn">
@@ -279,6 +320,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
     
     <script>
+        // Toggle password visibility
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+        
         // Password strength indicator
         var passwordInput = document.getElementById('new_password');
         var confirmInput = document.getElementById('confirm_password');

@@ -69,8 +69,10 @@ if ($action_type == 'update_status' && $ma_donhang_chi_tiet > 0 && isset($_GET['
     <title>Quản Lý Kho - Đơn hàng chờ xuất</title>
     <!-- Thêm Tailwind CSS để có giao diện đẹp và responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/mobile-responsive.js?v=1765636816"></script>
     <!-- Thêm Font Awesome cho icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636816">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
         .card { border-radius: 0.75rem; }
@@ -89,9 +91,14 @@ if ($action_type == 'update_status' && $ma_donhang_chi_tiet > 0 && isset($_GET['
 <div class="bg-indigo-600 shadow-md py-4 no-print">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <h1 class="text-2xl font-bold text-white"><i class="fas fa-warehouse mr-2"></i> Hệ thống Kho</h1>
-        <a href="logout.php" class="text-white hover:text-indigo-200 transition duration-150">
-            <i class="fas fa-sign-out-alt mr-1"></i> Đăng xuất
-        </a>
+        <div class="flex gap-4">
+            <a href="nhanvienkho_nhap.php" class="text-white hover:text-indigo-200 transition duration-150">
+                <i class="fas fa-undo mr-1"></i> Nhập Kho (Đổi Trả)
+            </a>
+            <a href="logout.php" class="text-white hover:text-indigo-200 transition duration-150">
+                <i class="fas fa-sign-out-alt mr-1"></i> Đăng xuất
+            </a>
+        </div>
     </div>
 </div>
 

@@ -22,6 +22,18 @@ $user = $stmtUser->fetch();
 // Lấy giỏ hàng hiện tại
 $cart_items = array();
 $tong_tien_hang = 0;
+$tien_ship = 30000; // mặc định
+$discount_amount = 0;
+$promo_code = '';
+
+// Lấy thông tin từ session nếu có
+if (isset($_SESSION['cart_summary'])) {
+    $cart_summary = $_SESSION['cart_summary'];
+    $tong_tien_hang = $cart_summary['subtotal'];
+    $tien_ship = $cart_summary['shipping_fee'];
+    $discount_amount = $cart_summary['discount_amount'];
+    $promo_code = $cart_summary['promo_code'];
+}
 
 $sqlCart = "SELECT 
                 g.id_giohang,
@@ -40,8 +52,11 @@ $stmtCart = $conn->prepare($sqlCart);
 $stmtCart->execute(array($user_id));
 $cart_items = $stmtCart->fetchAll();
 
-foreach ($cart_items as $item) {
-    $tong_tien_hang += $item['thanh_tien'];
+// Nếu chưa có thông tin từ session, tính lại
+if (!isset($_SESSION['cart_summary'])) {
+    foreach ($cart_items as $item) {
+        $tong_tien_hang += $item['thanh_tien'];
+    }
 }
 
 // Nếu giỏ hàng trống thì quay lại trang giỏ hàng
@@ -50,9 +65,8 @@ if (empty($cart_items)) {
     exit();
 }
 
-// Thiết lập phí ship và tổng tiền
-$tien_ship = 15000; // có thể cấu hình sau
-$tong_tien = $tong_tien_hang + $tien_ship;
+// Tính tổng tiền cuối cùng (đã trừ giảm giá)
+$tong_tien = $tong_tien_hang + $tien_ship - $discount_amount;
 
 // Tạo đơn hàng trong bảng don_hang
 // Lấy thông tin từ user (có thể mở rộng để lấy từ form invoice sau)
@@ -83,6 +97,13 @@ $stmtOrder->execute(array(
     ':ma_user'         => $user_id
 ));
 
+// Lưu ghi chú về mã khuyến mãi đã áp dụng (nếu có)
+if (!empty($promo_code)) {
+    // Có thể thêm vào ghi chú hoặc bảng riêng nếu cần
+    // Tạm thời lưu vào session để tracking
+    $_SESSION['order_promo_applied'] = $promo_code;
+}
+
 $ma_donhang = $conn->lastInsertId();
 
 // Lưu chi tiết đơn hàng vào bảng chitiet_donhang và trừ số lượng sản phẩm
@@ -106,9 +127,13 @@ foreach ($cart_items as $item) {
     $updateStock->execute(array($item['so_luong'], $item['id_sanpham']));
 }
 
-// Xóa giỏ hàng sau khi tạo đơn hàng thành công
+// Xóa giỏ hàng ngay với COD vì đã xác nhận đặt hàng
 $deleteCart = $conn->prepare("DELETE FROM gio_hang WHERE ma_user = ?");
 $deleteCart->execute(array($user_id));
+
+// Xóa session cart_summary và promo_code sau khi đặt hàng thành công
+unset($_SESSION['cart_summary']);
+unset($_SESSION['promo_code']);
 
 // Lấy số lượng giỏ hàng (sẽ = 0 sau khi xóa)
 include_once 'includes/cart_count.php';
@@ -121,6 +146,7 @@ include_once 'includes/cart_count.php';
     <title>Đặt hàng thành công - KLTN Shop</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636814">
     <style>
         .success-container {
             max-width: 600px;
@@ -254,5 +280,6 @@ include_once 'includes/cart_count.php';
     <?php include 'includes/footer.php'; ?>
 
     <script src="script.js"></script>
+    <script src="js/mobile-responsive.js?v=1765636814"></script>
 </body>
 </html>

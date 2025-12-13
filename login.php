@@ -94,7 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <title>Đăng Nhập - KLTN Shop</title>
     <!-- Giả định file style.css tồn tại và chứa các style chung -->
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/responsive.css?v=1765636815"> 
     <style>
         /* CSS cho trang Đăng Nhập */
         body {
@@ -439,5 +440,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             })
         }
     </script>
+    <script src="js/mobile-responsive.js?v=1765636815"></script>
 </body>
 </html>
